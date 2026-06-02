@@ -1,0 +1,84 @@
+---
+title: Prerequisites
+description: Administrative rights, tools, and information required before deploying Chrome Tab Monitor to managed devices.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Verify every item on this checklist before starting the deployment. Missing a prerequisite is the
+most common cause of deployment failures and is much faster to address before you begin than to
+debug after the fact.
+
+---
+
+## Administrative permissions
+
+You need **at least one** of the following, depending on your chosen deployment method:
+
+| Deployment method | Required permission |
+|-------------------|--------------------|
+| GPO (Active Directory) | Domain administrator, or delegated rights to create and link GPOs in the target OU |
+| Direct registry | Local administrator on each target machine |
+| Google Admin Console | Super Admin or delegated Chrome management admin |
+| Microsoft Intune | Intune administrator with Device Configuration profile rights |
+
+## Required tools
+
+| Tool | Purpose | Notes |
+|------|---------|-------|
+| **Group Policy Management Console (GPMC)** | Create and edit GPOs | Included on Windows Server; install via RSAT on Windows 10/11 Pro/Enterprise |
+| **Registry Editor (`regedit`)** | Direct registry deployments or post-deployment verification | Available on all Windows versions |
+| **PowerShell 5.1+** | Scripted registry deployments | Pre-installed on Windows 10/11 |
+| **Active Directory Users and Computers** | Verify OU membership of target machines | Required only for GPO deployments |
+
+Optional tools depending on your environment:
+
+- **Google Admin Console** (`admin.google.com`) — required for Google Workspace / Chrome Browser
+  Cloud Management deployments.
+- **Microsoft Intune** (`intune.microsoft.com`) — required for Intune-managed Edge deployments.
+- An **ADMX Central Store** at `\\<domain>\SYSVOL\<domain>\Policies\PolicyDefinitions\` —
+  strongly recommended for GPO deployments with ADMX templates.
+
+## Target browser versions
+
+Chrome Tab Monitor uses the **Manifest V3** extension platform. Ensure managed devices run a
+supported browser version before deploying:
+
+| Browser | Minimum version | Recommended |
+|---------|----------------|-------------|
+| Google Chrome | 88 | Latest stable |
+| Microsoft Edge | 88 | Latest stable |
+
+## Extension IDs
+
+You need the correct Extension ID for each target browser store. The Extension ID is a
+32-character lowercase string that uniquely identifies the extension in the store.
+
+| Browser | Placeholder | Where to find it |
+|---------|-------------|-----------------|
+| Google Chrome | `<CHROME_EXTENSION_ID>` | Chrome Web Store listing URL, or `chrome://extensions` with developer mode enabled |
+| Microsoft Edge | `<EDGE_EXTENSION_ID>` | Edge Add-ons Partner Center, or `edge://extensions` with developer mode enabled |
+
+<Aside type="caution">
+The Edge Add-ons store assigns a **different Extension ID** than the Chrome Web Store, even for
+the same extension package. If you deploy to both browsers, confirm you are using the correct ID
+for each target. Using the Chrome ID with the Edge update URL (or vice versa) causes the
+force-install to fail silently — the browser cannot locate the extension at the store endpoint.
+</Aside>
+
+## Network access
+
+Managed devices must be able to reach the extension update URL over HTTPS at browser startup for
+the force-installation download to succeed. If your environment uses a web proxy or firewall with
+allowlists, add the following endpoints:
+
+| Browser | Update URL (must be reachable from managed devices) |
+|---------|-----------------------------------------------------|
+| Chrome | `https://clients2.google.com/service/update2/crx` |
+| Edge (store) | `https://edge.microsoft.com/extensionwebstorebase/v1/crx` |
+
+<Aside type="caution">
+Policy changes applied via GPO or Windows Registry **do not take effect until the browser is fully
+restarted** — all windows must be closed and the browser reopened. Plan for this in your rollout
+schedule: users must restart their browser after the GPO refresh for the new limits to apply.
+</Aside>

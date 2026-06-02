@@ -1,0 +1,144 @@
+---
+title: Registry Paths — Quick Reference
+description: Complete cheat sheet of all Windows Registry paths and values for Chrome Tab Monitor force-install and managed parameter configuration on Chrome and Edge.
+---
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+All paths below use `HKEY_LOCAL_MACHINE` (HKLM) and apply machine-wide. Replace
+`<CHROME_EXTENSION_ID>` and `<EDGE_EXTENSION_ID>` with the real store IDs before deploying.
+
+---
+
+## Force-install paths
+
+<Tabs syncKey="browser">
+  <TabItem label="Google Chrome">
+
+    **Registry path:**
+    ```
+    HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome\ExtensionInstallForcelist
+    ```
+
+    | Value name | Type | Data |
+    |------------|------|------|
+    | `1` | `REG_SZ` | `<CHROME_EXTENSION_ID>;https://clients2.google.com/service/update2/crx` |
+
+    **Alternative — ExtensionSettings (unified install + update URL):**
+    ```
+    HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome
+    ```
+    | Value name | Type | Data |
+    |------------|------|------|
+    | `ExtensionSettings` | `REG_SZ` | JSON — see [By Policy](/configuration/by-policy/) |
+
+  </TabItem>
+  <TabItem label="Microsoft Edge">
+
+    **Registry path:**
+    ```
+    HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge\ExtensionInstallForcelist
+    ```
+
+    | Value name | Type | Data |
+    |------------|------|------|
+    | `1` | `REG_SZ` | `<EDGE_EXTENSION_ID>;https://edge.microsoft.com/extensionwebstorebase/v1/crx` |
+
+    **Alternative — ExtensionSettings (unified install + update URL):**
+    ```
+    HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge
+    ```
+    | Value name | Type | Data |
+    |------------|------|------|
+    | `ExtensionSettings` | `REG_SZ` | JSON — see [By Policy](/configuration/by-policy/) |
+
+  </TabItem>
+</Tabs>
+
+---
+
+## Managed parameter paths
+
+<Tabs syncKey="browser">
+  <TabItem label="Google Chrome">
+
+    **Base path (create all parameter values inside this key):**
+    ```
+    HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome\3rdparty\extensions\<CHROME_EXTENSION_ID>\policy
+    ```
+
+    | Value name | Type | Default (hex) | Decimal |
+    |------------|------|---------------|---------|
+    | `enabled` | `REG_DWORD` | `dword:00000001` | 1 |
+    | `tabLimit` | `REG_DWORD` | `dword:00000006` | 6 |
+    | `windowLimit` | `REG_DWORD` | `dword:00000002` | 2 |
+    | `autoClose` | `REG_DWORD` | `dword:00000001` | 1 |
+    | `autoCloseWindows` | `REG_DWORD` | `dword:00000001` | 1 |
+
+  </TabItem>
+  <TabItem label="Microsoft Edge">
+
+    **Base path (create all parameter values inside this key):**
+    ```
+    HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge\3rdparty\extensions\<EDGE_EXTENSION_ID>\policy
+    ```
+
+    | Value name | Type | Default (hex) | Decimal |
+    |------------|------|---------------|---------|
+    | `enabled` | `REG_DWORD` | `dword:00000001` | 1 |
+    | `tabLimit` | `REG_DWORD` | `dword:00000006` | 6 |
+    | `windowLimit` | `REG_DWORD` | `dword:00000002` | 2 |
+    | `autoClose` | `REG_DWORD` | `dword:00000001` | 1 |
+    | `autoCloseWindows` | `REG_DWORD` | `dword:00000001` | 1 |
+
+  </TabItem>
+</Tabs>
+
+---
+
+## Update URLs
+
+| Browser | Update URL |
+|---------|------------|
+| Google Chrome (Web Store) | `https://clients2.google.com/service/update2/crx` |
+| Microsoft Edge (Edge Add-ons) | `https://edge.microsoft.com/extensionwebstorebase/v1/crx` |
+
+---
+
+## Verification pages
+
+| Browser | Policy page | Extensions page |
+|---------|-------------|-----------------|
+| Google Chrome | `chrome://policy` | `chrome://extensions` |
+| Microsoft Edge | `edge://policy` | `edge://extensions` |
+
+---
+
+## Useful PowerShell commands
+
+```powershell
+# Force policy refresh (run as Administrator on target machine)
+gpupdate /force
+
+# View applied Computer GPOs
+gpresult /scope computer /r
+
+# View applied GPOs with detail (includes extension policy keys)
+gpresult /scope computer /v
+
+# Check if force-install entry exists (Chrome)
+Get-ItemProperty "HKLM:\SOFTWARE\Policies\Google\Chrome\ExtensionInstallForcelist" -ErrorAction SilentlyContinue
+
+# Check managed parameters (Chrome) — replace <CHROME_EXTENSION_ID>
+Get-ItemProperty "HKLM:\SOFTWARE\Policies\Google\Chrome\3rdparty\extensions\<CHROME_EXTENSION_ID>\policy" -ErrorAction SilentlyContinue |
+    Select-Object enabled, tabLimit, windowLimit, autoClose, autoCloseWindows | Format-List
+```
+
+---
+
+## Related pages
+
+- [Configuration by Registry](/configuration/by-registry/) — detailed steps and ready-to-use `.reg` files
+- [Parameters Reference](/configuration/parameters-reference/) — full parameter table with types and ranges
+- [Verification](/operations/verification/) — how to confirm the policy is applied correctly
+- [Troubleshooting](/operations/troubleshooting/) — fix common registry deployment problems

@@ -1,0 +1,155 @@
+---
+title: Cross-platform Managed Configuration
+description: Deliver managed parameters to Chrome Tab Monitor on Linux and macOS using the browser's managed JSON policy files — no Windows Registry required.
+---
+
+import { Aside, Tabs, TabItem } from '@astrojs/starlight/components';
+
+On **Linux** and **macOS**, Chrome and Edge do not use the Windows Registry for policy. Instead,
+the browsers load managed policy from JSON files placed in platform-specific system directories.
+The JSON schema and parameter names are identical to the Windows-based approaches — only the
+delivery mechanism changes.
+
+<Aside type="note">
+This section is an **appendix for non-Windows environments**. The primary deployment guides
+(GPO, Registry, cloud console) target Windows. For cloud-managed devices on any platform,
+[Configuration by Cloud Console](/configuration/by-cloud-console/) is the recommended and
+simplest alternative — Google Admin Console and Microsoft Intune both work across Windows, macOS,
+and Linux for enrolled devices.
+</Aside>
+
+---
+
+## Linux
+
+### Google Chrome
+
+Place a JSON file in the Chrome managed policies directory. Chrome reads all `.json` files in
+this directory at startup and merges their contents into the managed storage it exposes to
+extensions.
+
+**Directory (create if it does not exist):**
+```
+/etc/opt/chrome/policies/managed/
+```
+
+**Create the policy file:**
+```bash
+sudo mkdir -p /etc/opt/chrome/policies/managed
+sudo tee /etc/opt/chrome/policies/managed/tab-monitor.json > /dev/null << 'EOF'
+{
+  "<CHROME_EXTENSION_ID>": {
+    "enabled": true,
+    "tabLimit": 6,
+    "windowLimit": 2,
+    "autoClose": true,
+    "autoCloseWindows": true
+  }
+}
+EOF
+```
+
+The JSON uses the Extension ID as the top-level key, with the five managed parameters nested
+inside. Replace `<CHROME_EXTENSION_ID>` with the real store ID and adjust the parameter values
+to match your organization's requirements.
+
+After creating the file, restart Chrome and open `chrome://policy` → click **Reload policies**.
+The extension parameters should appear under **Extension policies** with **Status: OK**.
+
+### Microsoft Edge
+
+Edge on Linux reads managed policy from a separate directory:
+
+**Directory:**
+```
+/etc/opt/edge/policies/managed/
+```
+
+**Create the policy file:**
+```bash
+sudo mkdir -p /etc/opt/edge/policies/managed
+sudo tee /etc/opt/edge/policies/managed/tab-monitor.json > /dev/null << 'EOF'
+{
+  "<EDGE_EXTENSION_ID>": {
+    "enabled": true,
+    "tabLimit": 6,
+    "windowLimit": 2,
+    "autoClose": true,
+    "autoCloseWindows": true
+  }
+}
+EOF
+```
+
+Restart Edge and verify at `edge://policy`.
+
+---
+
+## macOS
+
+On macOS, Chrome and Edge read managed preferences from configuration profiles deployed via MDM
+(Jamf, Apple Business Manager, Mosyle, or similar). The profile delivers values using the
+browser's preference domain.
+
+### Google Chrome
+
+**Preference domain:** `com.google.Chrome`
+
+The managed extension policy key is `3rdParty`, with the Extension ID as a sub-key inside
+`extensions`, and a nested `policy` dictionary containing the parameter values.
+
+Create a configuration profile with the following `plist` payload and deploy it via your MDM:
+
+```xml title="com.google.Chrome — extension policy plist"
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>3rdParty</key>
+  <dict>
+    <key>extensions</key>
+    <dict>
+      <key><CHROME_EXTENSION_ID></key>
+      <dict>
+        <key>policy</key>
+        <dict>
+          <key>enabled</key>
+          <true/>
+          <key>tabLimit</key>
+          <integer>6</integer>
+          <key>windowLimit</key>
+          <integer>2</integer>
+          <key>autoClose</key>
+          <true/>
+          <key>autoCloseWindows</key>
+          <true/>
+        </dict>
+      </dict>
+    </dict>
+  </dict>
+</dict>
+</plist>
+```
+
+Replace `<CHROME_EXTENSION_ID>` with the real ID and adjust the integer values as needed. Deploy
+the profile to target Macs via your MDM solution and verify at `chrome://policy` after the next
+MDM check-in.
+
+### Microsoft Edge
+
+For Edge on macOS, use the preference domain `com.microsoft.Edge`. The plist structure is
+identical to Chrome — replace `<CHROME_EXTENSION_ID>` with `<EDGE_EXTENSION_ID>` throughout.
+
+Deploy the profile via your MDM and verify at `edge://policy`.
+
+<Aside type="tip">
+If your Mac devices are already enrolled in **Google Workspace with Chrome Browser Cloud
+Management**, use the Google Admin Console instead of custom plist profiles — it supports macOS
+devices and is simpler to manage centrally. See
+[Configuration by Cloud Console](/configuration/by-cloud-console/).
+
+Similarly, if Edge on macOS is managed via **Microsoft Intune**, use an Intune configuration
+profile rather than a manual plist. Intune handles profile delivery and compliance reporting
+automatically.
+</Aside>

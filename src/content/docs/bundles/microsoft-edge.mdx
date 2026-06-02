@@ -1,0 +1,160 @@
+---
+title: Microsoft Edge Bundle
+description: Download Microsoft Edge policy templates, import ADMX files, and force-install Chrome Tab Monitor on managed Edge devices via GPO.
+---
+
+import { Steps, Aside, FileTree } from '@astrojs/starlight/components';
+
+This guide walks you through deploying Chrome Tab Monitor to a fleet of managed Microsoft Edge
+installations using the Edge Enterprise policy templates and Group Policy. At the end of this
+procedure, the extension is silently installed and policy-pinned on every machine in the target OU.
+
+## Before you begin
+
+Verify the following before starting:
+
+- You have **domain administrator** rights and access to **GPMC** on the domain controller.
+- The **ADMX Central Store** is configured at
+  `\\<domain>\SYSVOL\<domain>\Policies\PolicyDefinitions\`.
+- You have the correct Extension ID for your deployment scenario:
+  - If published on **Edge Add-ons** store: `<EDGE_EXTENSION_ID>`
+  - If only published on **Chrome Web Store** (deployed to Edge via Chrome update URL):
+    `<CHROME_EXTENSION_ID>`
+
+<Aside type="caution">
+The Edge Add-ons store may assign a **different Extension ID** than the Chrome Web Store, even for
+the same extension. Confirm which store you are deploying from and use the matching ID. Mixing
+IDs and update URLs from different stores will cause the installation to fail silently.
+</Aside>
+
+---
+
+<Steps>
+
+1. ## Download the Microsoft Edge policy templates
+
+   Navigate to **https://www.microsoft.com/en-us/edge/business/download** and download the
+   **"Microsoft Edge policy file"** package (`MicrosoftEdgePolicyTemplates.zip`).
+
+   Extract the archive. The files you need are under `windows/admx/`:
+
+   <FileTree>
+   - MicrosoftEdgePolicyTemplates/
+     - windows/
+       - admx/
+         - **msedge.admx**
+         - **msedgeupdate.admx**
+         - en-US/
+           - **msedge.adml**
+           - msedgeupdate.adml
+   </FileTree>
+
+   You need `msedge.admx` and its language file to manage extensions. The `msedgeupdate.admx`
+   file controls the Edge update client and is optional for this deployment.
+
+2. ## Import ADMX files into the Central Store
+
+   Copy the `.admx` and `.adml` files to the Central Store on your domain controller:
+
+   | Source file | Destination |
+   |-------------|-------------|
+   | `msedge.admx` | `PolicyDefinitions\msedge.admx` |
+   | `en-US\msedge.adml` | `PolicyDefinitions\en-US\msedge.adml` |
+
+   For a **standalone machine** without a Central Store:
+
+   ```
+   C:\Windows\PolicyDefinitions\msedge.admx
+   C:\Windows\PolicyDefinitions\en-US\msedge.adml
+   ```
+
+   **Verify the import:** Open any GPO in the Group Policy Management Editor and navigate to
+   `Computer Configuration > Administrative Templates > Microsoft Edge`. If you see the Microsoft
+   Edge categories listed with all their sub-policies, the templates are correctly installed.
+
+3. ## Create a GPO and force-install the extension
+
+   Open **Group Policy Management** (`gpmc.msc`) on the domain controller.
+
+   1. Right-click the target OU → **Create a GPO in this domain, and Link it here**.
+   2. Name the GPO (for example: `Edge - Force Install Tab Monitor`) and click **OK**.
+   3. Right-click the new GPO → **Edit** to open the Group Policy Management Editor.
+   4. Navigate to:
+      **Computer Configuration ▸ Administrative Templates ▸ Microsoft Edge ▸ Extensions ▸
+      "Control which extensions are installed silently"**
+   5. Set the policy to **Enabled**.
+   6. Click **Show…** and add the appropriate entry:
+
+      **If the extension is published in Edge Add-ons:**
+      ```
+      <EDGE_EXTENSION_ID>;https://edge.microsoft.com/extensionwebstorebase/v1/crx
+      ```
+
+      **If deploying from Chrome Web Store to Edge:**
+      ```
+      <CHROME_EXTENSION_ID>;https://clients2.google.com/service/update2/crx
+      ```
+
+      When using the Chrome Web Store URL on Edge, you must also enable **"Allow specific
+      extensions to be installed"** and add the same Extension ID to that list. Without this
+      allowlist entry, Edge blocks installations from external sources even with a force-install
+      entry present.
+
+   7. Click **OK** and close the Group Policy Management Editor.
+
+   <details class="ps-block">
+   <summary>⚡ Faster: apply via PowerShell (run as Administrator)</summary>
+
+   Replace `<EDGE_EXTENSION_ID>` with the real ID before running. For Chrome Web Store
+   deployments on Edge, swap the ID and update URL accordingly.
+
+   ```powershell
+   # Run as Administrator
+   $ExtensionID  = "<EDGE_EXTENSION_ID>"
+   $UpdateURL    = "https://edge.microsoft.com/extensionwebstorebase/v1/crx"
+   $RegPath      = "HKLM:\SOFTWARE\Policies\Microsoft\Edge\ExtensionInstallForcelist"
+
+   if (-not (Test-Path $RegPath)) {
+       New-Item -Path $RegPath -Force | Out-Null
+   }
+   Set-ItemProperty -Path $RegPath -Name "1" -Value "$ExtensionID;$UpdateURL" -Type String
+
+   Write-Host "✔ Force-install entry created." -ForegroundColor Green
+   gpupdate /force
+   Write-Host "✔ Policies refreshed. Restart Edge to apply." -ForegroundColor Green
+   ```
+
+   </details>
+
+4. ## Apply the policy and verify
+
+   On a managed machine in the target OU, open PowerShell **as Administrator** and run:
+
+   ```powershell
+   gpupdate /force
+   ```
+
+   Fully close and reopen Microsoft Edge — all windows must be closed and reopened for the new
+   policy to load.
+
+   Open `edge://policy` in the address bar and click **Reload policies**. Confirm:
+
+   - **ExtensionInstallForcelist** (or **ExtensionSettings** if you used that policy instead)
+     appears under **Microsoft Edge Policies** with **Status: OK**.
+   - The entry contains the correct Extension ID and update URL.
+
+   Open `edge://extensions` and confirm that Chrome Tab Monitor appears as **"Installed by your
+   organization"** with no **Remove** button available to the user.
+
+</Steps>
+
+<Aside type="note">
+After confirming the force-install, proceed to configure the managed parameters so the tab and
+window limits are enforced across the fleet:
+- [Configuration by Policy](/configuration/by-policy/) — deliver parameters via managed storage
+- [Configuration by Registry](/configuration/by-registry/) — deploy parameters via registry keys
+
+Always use the Edge-specific registry paths (`SOFTWARE\Policies\Microsoft\Edge\…`) when configuring
+parameters for Edge. See [Registry Paths Reference](/reference/registry-paths/) for a complete
+cheat sheet.
+</Aside>

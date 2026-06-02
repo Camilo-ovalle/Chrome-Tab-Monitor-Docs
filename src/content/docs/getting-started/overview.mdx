@@ -1,0 +1,99 @@
+---
+title: Overview
+description: High-level overview of deploying and administering Chrome Tab Monitor in a corporate environment — what you deploy, what you control, and the end-to-end flow.
+---
+
+import { Steps, Aside, Card, CardGrid } from '@astrojs/starlight/components';
+
+## What you will deploy
+
+**Chrome Tab Monitor** is a Manifest V3 browser extension for Google Chrome and Microsoft Edge.
+It enforces configurable limits on the number of open tabs per window and the number of
+simultaneous browser windows, with automatic closure of excess tabs or windows when the limits
+are exceeded.
+
+In a managed deployment, you will:
+
+1. **Force-install** the extension via Group Policy, Windows Registry, or a cloud management
+   console (Google Admin Console / Microsoft Intune). Force-installation means the extension is
+   deployed silently on every device in the target scope, cannot be removed by end users, and is
+   automatically reinstalled if the browser is updated or reset.
+
+2. **Configure five manageable parameters** centrally. These parameters are delivered via the
+   browser's managed storage API (`chrome.storage.managed`) and override any values the user has
+   set locally. End users see a **GPO** badge next to locked fields in the popup — those fields
+   are read-only until the administrator removes the policy.
+
+## What you can manage centrally
+
+The following five parameters are included in the extension's managed schema (`schema.json`) and
+can be set and locked by policy:
+
+| Parameter | Default | Range | Description |
+|-----------|---------|-------|-------------|
+| `enabled` | `true` | — | Enable or disable tab and window monitoring globally. |
+| `tabLimit` | `6` | 1–100 | Maximum tabs allowed per browser window. |
+| `windowLimit` | `2` | 1–10 | Maximum simultaneous browser windows allowed. |
+| `autoClose` | `true` | — | Automatically close tabs that exceed `tabLimit`. |
+| `autoCloseWindows` | `true` | — | Automatically close windows that exceed `windowLimit`. |
+
+See [Parameters Reference](/configuration/parameters-reference/) for registry types, hex values,
+precedence rules, and the complete list of non-manageable parameters.
+
+<Aside type="note">
+Only the five parameters above can be locked by policy. Parameters such as `notifications`,
+`pauseBetweenClosures`, `windowGracePeriod`, and `adminRole` are **not** in the managed schema
+and can only be changed by end users through the popup — they sync with the browser profile via
+`chrome.storage.sync` and are never affected by GPO.
+</Aside>
+
+## Deployment methods at a glance
+
+<CardGrid>
+  <Card title="GPO + ADMX" icon="document">
+    Best for Active Directory domain environments. Import Chrome or Edge ADMX templates into the
+    Central Store, create a GPO linked to the target OU, and the policy applies automatically on
+    every GPO refresh cycle.
+
+    [Chrome bundle →](/bundles/chrome-enterprise/) · [Edge bundle →](/bundles/microsoft-edge/)
+  </Card>
+  <Card title="Windows Registry" icon="setting">
+    Best for standalone machines, quick testing, or per-machine configuration without ADMX
+    templates. Create registry values directly or deploy `.reg` files or PowerShell scripts via
+    SCCM or Intune (Windows-only).
+
+    [Registry guide →](/configuration/by-registry/)
+  </Card>
+  <Card title="Cloud Console" icon="laptop">
+    Best for cloud-managed devices enrolled in Google Workspace (Chrome Browser Cloud Management)
+    or Microsoft Intune (Edge). No on-premises infrastructure required — changes propagate
+    automatically on the next device check-in.
+
+    [Cloud console guide →](/configuration/by-cloud-console/)
+  </Card>
+</CardGrid>
+
+## End-to-end deployment flow
+
+<Steps>
+
+1. **Verify prerequisites** — Confirm you have the required administrative permissions, tools, and
+   the Extension ID(s) for the target browser(s). See
+   [Prerequisites](/getting-started/prerequisites/).
+
+2. **Choose a deployment path** — Select the method that fits your infrastructure. See
+   [Deployment Paths](/getting-started/deployment-paths/) for a comparison table and decision
+   guide.
+
+3. **Force-install the extension** — Push the extension to managed devices so it installs
+   silently on next browser startup and cannot be removed by end users.
+
+4. **Configure managed parameters** — Deliver the five parameters (`tabLimit`, `windowLimit`,
+   etc.) via your chosen method so the limits are enforced centrally from the first browser
+   start after the policy applies.
+
+5. **Verify the deployment** — On a managed device, open `chrome://policy` or `edge://policy`,
+   confirm the policies appear with **Status: OK**, and check that the extension popup shows
+   **GPO** badges on all managed fields. See [Verification](/operations/verification/).
+
+</Steps>

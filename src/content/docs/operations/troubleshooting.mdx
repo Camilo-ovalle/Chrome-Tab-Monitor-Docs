@@ -1,0 +1,191 @@
+---
+title: Troubleshooting
+description: Diagnose and fix the most common Chrome Tab Monitor deployment problems — extension not installing, parameters not applying, GPO badge missing, and more.
+---
+
+import { Aside, Tabs, TabItem } from '@astrojs/starlight/components';
+
+This page covers the most common deployment issues and their root causes. Each entry follows the
+pattern: **Symptom → Root cause → Resolution**.
+
+For general verification steps (policy page, registry check, GPO badge), see
+[Verification](/operations/verification/).
+
+---
+
+## The extension does not install after gpupdate
+
+**Symptom:** After running `gpupdate /force` and restarting the browser, the extension does not
+appear in `chrome://extensions` or `edge://extensions`.
+
+**Cause 1 — Incorrect Extension ID or update URL**
+
+Open `chrome://policy` (or `edge://policy`) and find the `ExtensionInstallForcelist` entry.
+Verify that:
+
+- The Extension ID in the policy value matches the real store ID (check the Chrome Web Store or
+  Edge Add-ons page, or `chrome://extensions` with developer mode enabled).
+- The update URL is exactly one of:
+  - Chrome: `https://clients2.google.com/service/update2/crx`
+  - Edge (store): `https://edge.microsoft.com/extensionwebstorebase/v1/crx`
+- The semicolon between the ID and the URL is a standard ASCII semicolon (`;`), not a
+  lookalike character that may have been pasted from a rich-text source.
+
+**Cause 2 — The Chrome Web Store or Edge Add-ons is network-blocked**
+
+The browser must be able to reach the update URL at startup to download the extension. Check:
+
+- Corporate firewall or proxy rules that may block `clients2.google.com` or
+  `edge.microsoft.com`.
+- The `ExtensionInstallBlocklist` policy — if it contains `*` or the specific Extension ID, it
+  overrides the force-install list.
+
+**Cause 3 — GPO is not linked to the correct OU**
+
+Force-install is a **Computer Configuration** policy — it must be linked to an OU that contains
+the **computer objects** (not user objects). Verify the GPO link in GPMC and confirm the target
+machines are in the linked OU (not a child OU that the GPO does not cover).
+
+**Cause 4 — Policy not yet refreshed**
+
+Run `gpresult /r` on the target machine and check the **Applied Group Policy Objects** section
+under **Computer Settings**. If the GPO is not listed, the link or targeting may be incorrect.
+Run `gpupdate /force` and try again.
+
+<Aside type="caution">
+Never guess or auto-complete the Extension ID. An incorrect ID causes the browser to silently
+fail the download and log nothing visible to the user. Always copy the ID from the store page or
+`chrome://extensions` developer mode.
+</Aside>
+
+---
+
+## Parameters are not applied (no GPO badge in popup)
+
+**Symptom:** The extension installs correctly, but the popup fields are editable and there is no
+GPO badge. Running `chrome://policy` shows no entry for the extension parameters.
+
+**Cause 1 — Wrong registry value type**
+
+All five managed parameters must be `REG_DWORD`. Open `regedit` and navigate to the `…\policy`
+key for your extension. Check the **Type** column for each value:
+
+- Correct: `REG_DWORD`
+- Incorrect: `REG_SZ`, `REG_BINARY`, or any other type
+
+Delete incorrectly typed values and recreate them as `REG_DWORD`. See
+[Configuration by Registry](/configuration/by-registry/) for the exact types and values.
+
+**Cause 2 — Values are under the wrong Extension ID**
+
+The registry key path `…\3rdparty\extensions\<ID>\policy` is **case-sensitive** for the Extension
+ID on some systems. Open `regedit`, navigate to the `3rdparty\extensions\` key, and verify the
+subfolder name matches the Extension ID character-for-character.
+
+**Cause 3 — Browser not restarted after the registry change**
+
+The extension reads `chrome.storage.managed` only on browser startup. Closing a tab or refreshing
+the extension popup is not enough. All browser windows must be fully closed and the browser
+reopened.
+
+**Cause 4 — The parameter is not in schema.json**
+
+Only `enabled`, `tabLimit`, `windowLimit`, `autoClose`, and `autoCloseWindows` are in the managed
+schema. If you set `notifications`, `pauseBetweenClosures`, `windowGracePeriod`, or `adminRole`
+in the policy key, the extension ignores them — they are user-only parameters. See
+[Parameters Reference](/configuration/parameters-reference/).
+
+---
+
+## GPO badge does not appear for a specific parameter
+
+**Symptom:** `chrome://policy` shows the parameter value with **Status: OK**, but the
+corresponding field in the popup is still editable (no GPO badge).
+
+**Cause — Stale extension state or cached sync value**
+
+The extension reads managed storage on startup. If the browser was not fully restarted after the
+policy change, the extension may be using a cached value from `chrome.storage.sync` and not yet
+reflecting the managed override.
+
+**Resolution:**
+
+1. Close **all** browser windows (confirm the browser process is not running in the background).
+2. Reopen the browser.
+3. Open the extension popup — the GPO badge should now appear for managed fields.
+
+If the issue persists after a full restart, double-check that the parameter name in the registry
+is spelled correctly (it is case-sensitive: `tabLimit`, not `tablimit` or `TabLimit`).
+
+---
+
+## Edge does not install the extension via force-install
+
+**Symptom:** The force-install policy works on Chrome but Edge does not install the extension
+even after `gpupdate /force` and a browser restart.
+
+**Cause 1 — Wrong registry path for Edge**
+
+Edge uses `HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge\ExtensionInstallForcelist`, not
+the Chrome path. Open `regedit` and confirm the value is under the Edge path, not the Google
+Chrome path.
+
+**Cause 2 — Using Chrome Web Store URL without enabling the allowlist**
+
+If the extension is only published on the Chrome Web Store (not Edge Add-ons), Edge requires an
+explicit allowlist entry in addition to the force-install policy. Add the Extension ID to the
+**"Allow specific extensions to be installed"** policy in the Edge ADMX settings.
+
+**Cause 3 — Extension ID differs between stores**
+
+If the extension was published to the Edge Add-ons store, it has a different ID than the Chrome
+Web Store ID. Use `<EDGE_EXTENSION_ID>` (from the Edge Add-ons Partner Center) with the Edge
+update URL. Using the Chrome ID with the Edge update URL returns a 404 and the installation fails.
+
+**Cause 4 — Edge policy templates (ADMX) not imported**
+
+Open `edge://policy` and click **Reload policies**. If no Microsoft Edge policies appear at all,
+the ADMX templates for Edge are not installed in the Central Store. Follow the
+[Microsoft Edge Bundle](/bundles/microsoft-edge/) guide to import them.
+
+---
+
+## The extension is installed but limits are not being enforced
+
+**Symptom:** The extension appears in `chrome://extensions` as installed by enterprise policy,
+the popup shows the correct limit values with GPO badges, but tabs or windows are not being closed
+when the limits are exceeded.
+
+**Cause — `enabled` or `autoClose` / `autoCloseWindows` set to 0**
+
+Check the values in the registry or policy page:
+
+- `enabled` must be `1` (or `true`) for the extension to monitor tabs and windows at all.
+- `autoClose` must be `1` for automatic tab closure to trigger.
+- `autoCloseWindows` must be `1` for automatic window closure to trigger.
+
+If any of these are `0`, the extension operates in **warning-only mode** — it notifies the user
+but does not close anything automatically.
+
+<Tabs syncKey="browser">
+  <TabItem label="Google Chrome">
+
+    ```powershell
+    # Run as Administrator — verify Chrome policy values
+    Get-ItemProperty "HKLM:\SOFTWARE\Policies\Google\Chrome\3rdparty\extensions\<CHROME_EXTENSION_ID>\policy" |
+        Select-Object enabled, tabLimit, windowLimit, autoClose, autoCloseWindows |
+        Format-List
+    ```
+
+  </TabItem>
+  <TabItem label="Microsoft Edge">
+
+    ```powershell
+    # Run as Administrator — verify Edge policy values
+    Get-ItemProperty "HKLM:\SOFTWARE\Policies\Microsoft\Edge\3rdparty\extensions\<EDGE_EXTENSION_ID>\policy" |
+        Select-Object enabled, tabLimit, windowLimit, autoClose, autoCloseWindows |
+        Format-List
+    ```
+
+  </TabItem>
+</Tabs>

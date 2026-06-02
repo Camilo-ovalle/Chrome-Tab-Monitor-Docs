@@ -1,0 +1,255 @@
+---
+title: Configure by Registry
+description: Force-install Chrome Tab Monitor and set managed parameters directly via Windows Registry (regedit, .reg files, or PowerShell) without ADMX templates.
+---
+
+import { Tabs, TabItem, Aside } from '@astrojs/starlight/components';
+
+This is the primary operational reference for registry-based deployments. All paths use
+`HKEY_LOCAL_MACHINE` (HKLM) and apply machine-wide to every user profile on the machine. Use
+this method for standalone machines, quick testing, or fine-grained per-machine configuration
+without ADMX templates.
+
+## Before you begin
+
+- **Local administrator** rights on the target machine, or a GPO with Group Policy Preferences
+  configured in GPMC (see [Section 4](#4-deploy-via-group-policy-preferences-no-admx-required)).
+- Extension IDs ready: `<CHROME_EXTENSION_ID>` for Chrome, `<EDGE_EXTENSION_ID>` for Edge.
+
+---
+
+## 1. Force-install via registry
+
+Creating this registry value tells the browser to download and install the extension silently on
+next startup, and to prevent users from removing it.
+
+<Tabs syncKey="browser">
+  <TabItem label="Google Chrome">
+
+    **Registry path:**
+    ```
+    HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome\ExtensionInstallForcelist
+    ```
+
+    | Value name | Type | Data |
+    |------------|------|------|
+    | `1` | `REG_SZ` | `<CHROME_EXTENSION_ID>;https://clients2.google.com/service/update2/crx` |
+
+    The value name `1` is an index — if you have multiple force-installed extensions, use `2`,
+    `3`, etc. for additional entries. Each browser startup checks all indexed values.
+
+  </TabItem>
+  <TabItem label="Microsoft Edge">
+
+    **Registry path:**
+    ```
+    HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge\ExtensionInstallForcelist
+    ```
+
+    | Value name | Type | Data |
+    |------------|------|------|
+    | `1` | `REG_SZ` | `<EDGE_EXTENSION_ID>;https://edge.microsoft.com/extensionwebstorebase/v1/crx` |
+
+    Same indexing rule applies: use `1`, `2`, `3` for multiple extensions.
+
+  </TabItem>
+</Tabs>
+
+---
+
+## 2. Configure managed parameters via registry
+
+Managed parameters go under the browser's **3rd-party extension policy** key. Create this key
+path under the correct browser root, then add one `REG_DWORD` value per parameter inside it.
+
+<Tabs syncKey="browser">
+  <TabItem label="Google Chrome">
+
+    **Base path — create all parameter values here:**
+    ```
+    HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome\3rdparty\extensions\<CHROME_EXTENSION_ID>\policy
+    ```
+
+  </TabItem>
+  <TabItem label="Microsoft Edge">
+
+    **Base path — create all parameter values here:**
+    ```
+    HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge\3rdparty\extensions\<EDGE_EXTENSION_ID>\policy
+    ```
+
+  </TabItem>
+</Tabs>
+
+Inside the `…\policy` key, create one registry value per parameter:
+
+| Value name | Type | Decimal value | Description |
+|------------|------|---------------|-------------|
+| `enabled` | `REG_DWORD` | `1` | `1` = monitoring active, `0` = globally disabled |
+| `tabLimit` | `REG_DWORD` | `6` | Max tabs per window. Allowed range: 1–100 |
+| `windowLimit` | `REG_DWORD` | `2` | Max simultaneous windows. Allowed range: 1–10 |
+| `autoClose` | `REG_DWORD` | `1` | `1` = automatically close excess tabs |
+| `autoCloseWindows` | `REG_DWORD` | `1` | `1` = automatically close excess windows |
+
+<Aside type="caution">
+In `.reg` files, `REG_DWORD` values are written in **hexadecimal**. The table above shows decimal
+for readability. Examples:
+
+| Decimal | Hex in .reg file |
+|---------|------------------|
+| `6` | `dword:00000006` |
+| `10` | `dword:0000000a` |
+| `16` | `dword:00000010` |
+
+The ready-to-use `.reg` files in Section 3 already use the correct hex format.
+</Aside>
+
+---
+
+## 3. Ready-to-use `.reg` files
+
+Copy the file for your browser, replace the placeholder with the real Extension ID, and
+double-click to import (or deploy silently via `regedit /s file.reg`, SCCM, or Intune).
+
+<Tabs syncKey="browser">
+  <TabItem label="Google Chrome">
+
+```ini title="tab-monitor-chrome.reg"
+Windows Registry Editor Version 5.00
+
+; ── Force-install Chrome Tab Monitor ──────────────────────────────
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome\ExtensionInstallForcelist]
+"1"="<CHROME_EXTENSION_ID>;https://clients2.google.com/service/update2/crx"
+
+; ── Managed parameters (edit values to match your policy) ─────────
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome\3rdparty\extensions\<CHROME_EXTENSION_ID>\policy]
+"enabled"=dword:00000001
+"tabLimit"=dword:00000006
+"windowLimit"=dword:00000002
+"autoClose"=dword:00000001
+"autoCloseWindows"=dword:00000001
+```
+
+    <details class="ps-block">
+    <summary>⚡ Apply both via PowerShell (run as Administrator)</summary>
+
+    ```powershell
+    # Run as Administrator. Replace <CHROME_EXTENSION_ID> with the real store ID.
+    $ID         = "<CHROME_EXTENSION_ID>"
+    $UpdateURL  = "https://clients2.google.com/service/update2/crx"
+
+    # 1. Force-install entry
+    $ForcePath  = "HKLM:\SOFTWARE\Policies\Google\Chrome\ExtensionInstallForcelist"
+    if (-not (Test-Path $ForcePath)) { New-Item -Path $ForcePath -Force | Out-Null }
+    Set-ItemProperty -Path $ForcePath -Name "1" -Value "$ID;$UpdateURL" -Type String
+
+    # 2. Managed parameters
+    $PolicyPath = "HKLM:\SOFTWARE\Policies\Google\Chrome\3rdparty\extensions\$ID\policy"
+    if (-not (Test-Path $PolicyPath)) { New-Item -Path $PolicyPath -Force | Out-Null }
+
+    @{
+        enabled          = 1
+        tabLimit         = 6
+        windowLimit      = 2
+        autoClose        = 1
+        autoCloseWindows = 1
+    }.GetEnumerator() | ForEach-Object {
+        Set-ItemProperty -Path $PolicyPath -Name $_.Key -Value $_.Value -Type DWord
+    }
+
+    gpupdate /force
+    Write-Host "✔ Chrome Tab Monitor configured. Restart Chrome to apply." -ForegroundColor Green
+    ```
+
+    </details>
+
+  </TabItem>
+  <TabItem label="Microsoft Edge">
+
+```ini title="tab-monitor-edge.reg"
+Windows Registry Editor Version 5.00
+
+; ── Force-install Chrome Tab Monitor on Edge ──────────────────────
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge\ExtensionInstallForcelist]
+"1"="<EDGE_EXTENSION_ID>;https://edge.microsoft.com/extensionwebstorebase/v1/crx"
+
+; ── Managed parameters (edit values to match your policy) ─────────
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge\3rdparty\extensions\<EDGE_EXTENSION_ID>\policy]
+"enabled"=dword:00000001
+"tabLimit"=dword:00000006
+"windowLimit"=dword:00000002
+"autoClose"=dword:00000001
+"autoCloseWindows"=dword:00000001
+```
+
+    <details class="ps-block">
+    <summary>⚡ Apply both via PowerShell (run as Administrator)</summary>
+
+    ```powershell
+    # Run as Administrator. Replace <EDGE_EXTENSION_ID> with the real store ID.
+    $ID         = "<EDGE_EXTENSION_ID>"
+    $UpdateURL  = "https://edge.microsoft.com/extensionwebstorebase/v1/crx"
+
+    # 1. Force-install entry
+    $ForcePath  = "HKLM:\SOFTWARE\Policies\Microsoft\Edge\ExtensionInstallForcelist"
+    if (-not (Test-Path $ForcePath)) { New-Item -Path $ForcePath -Force | Out-Null }
+    Set-ItemProperty -Path $ForcePath -Name "1" -Value "$ID;$UpdateURL" -Type String
+
+    # 2. Managed parameters
+    $PolicyPath = "HKLM:\SOFTWARE\Policies\Microsoft\Edge\3rdparty\extensions\$ID\policy"
+    if (-not (Test-Path $PolicyPath)) { New-Item -Path $PolicyPath -Force | Out-Null }
+
+    @{
+        enabled          = 1
+        tabLimit         = 6
+        windowLimit      = 2
+        autoClose        = 1
+        autoCloseWindows = 1
+    }.GetEnumerator() | ForEach-Object {
+        Set-ItemProperty -Path $PolicyPath -Name $_.Key -Value $_.Value -Type DWord
+    }
+
+    gpupdate /force
+    Write-Host "✔ Chrome Tab Monitor configured on Edge. Restart Edge to apply." -ForegroundColor Green
+    ```
+
+    </details>
+
+  </TabItem>
+</Tabs>
+
+---
+
+## 4. Deploy via Group Policy Preferences (no ADMX required)
+
+Group Policy Preferences (GPP) let you create and update registry values directly from GPMC
+without importing any ADMX templates. This is useful when the Central Store is not configured or
+when you want to target specific OUs without a new ADMX deployment.
+
+1. Open **GPMC** (`gpmc.msc`) and edit a GPO linked to the target OU.
+2. Navigate to:
+   **Computer Configuration ▸ Preferences ▸ Windows Settings ▸ Registry**
+3. Right-click the **Registry** node → **New ▸ Registry Item**.
+4. Fill in the fields for the force-install entry:
+
+   | Field | Value |
+   |-------|-------|
+   | **Action** | `Update` |
+   | **Hive** | `HKEY_LOCAL_MACHINE` |
+   | **Key path** | `SOFTWARE\Policies\Google\Chrome\ExtensionInstallForcelist` |
+   | **Value name** | `1` |
+   | **Value type** | `REG_SZ` |
+   | **Value data** | `<CHROME_EXTENSION_ID>;https://clients2.google.com/service/update2/crx` |
+
+5. Click **OK**, then repeat **steps 3–4** for each managed parameter value, using:
+   - **Key path:** `SOFTWARE\Policies\Google\Chrome\3rdparty\extensions\<CHROME_EXTENSION_ID>\policy`
+   - **Value type:** `REG_DWORD`
+   - One item per parameter (`enabled`, `tabLimit`, `windowLimit`, `autoClose`, `autoCloseWindows`)
+
+6. Link the GPO to the target OU and run `gpupdate /force` on a test machine to verify.
+
+<Aside type="caution">
+All registry-based policy changes require a **full browser restart** — closing all windows and
+reopening the browser — before the extension reads the new managed values. Plan a maintenance
+window or user communication if deploying to production machines.
+</Aside>

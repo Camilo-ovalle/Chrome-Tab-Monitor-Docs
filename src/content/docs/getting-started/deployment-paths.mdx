@@ -1,0 +1,66 @@
+---
+title: Deployment Paths
+description: Decision guide for choosing the right Chrome Tab Monitor deployment method for your environment — GPO, Registry, or cloud console.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Use this page to choose the deployment method that best fits your environment. All three methods
+produce the same end result — the extension is force-installed and the five managed parameters are
+locked by policy — but they differ in tooling, scope of control, and infrastructure requirements.
+
+## Method comparison
+
+| Method | Best for | Infrastructure required | Scales automatically? |
+|--------|----------|------------------------|-----------------------|
+| **GPO + ADMX** | On-premises Active Directory domains | Domain controller, GPMC, ADMX Central Store | Yes — via GPO refresh cycle |
+| **Registry (regedit / GPP / PowerShell)** | Standalone machines, quick tests, per-machine tuning | None beyond local admin rights | No — deploy to each machine individually or via SCCM |
+| **Google Admin Console** | Devices enrolled in Google Workspace | Google Workspace admin account | Yes — via cloud device check-in |
+| **Microsoft Intune** | Devices enrolled in Microsoft Intune / Endpoint Manager | Intune admin account | Yes — via Intune sync |
+
+## Decision guide
+
+```
+Is the device joined to an on-premises Active Directory domain?
+│
+├─ YES → Is the ADMX Central Store configured?
+│         ├─ YES → GPO + ADMX  (most scalable, policy is self-documenting in GPMC)
+│         └─ NO  → Registry via Group Policy Preferences (no ADMX import needed)
+│
+└─ NO  → Is the device enrolled in a cloud management platform?
+          ├─ Google Workspace → Google Admin Console
+          ├─ Microsoft Intune → Microsoft Intune (Endpoint Manager)
+          └─ Neither          → Direct registry (regedit / PowerShell)
+```
+
+<Aside type="tip">
+For large fleets, **GPO + ADMX** or the **cloud console** are the strongly preferred methods —
+policy changes propagate automatically and are version-controlled in Active Directory or the cloud
+portal. Use direct registry edits only for isolated machines, quick tests, or when no management
+infrastructure is available.
+</Aside>
+
+## Next steps by method
+
+| Method | Next step |
+|--------|-----------|
+| GPO + ADMX — Chrome | [Chrome Enterprise bundle →](/bundles/chrome-enterprise/) |
+| GPO + ADMX — Edge | [Microsoft Edge bundle →](/bundles/microsoft-edge/) |
+| Registry (all browsers) | [Configuration by Registry →](/configuration/by-registry/) |
+| Google Admin Console | [Configuration by Cloud Console →](/configuration/by-cloud-console/) |
+| Microsoft Intune | [Configuration by Cloud Console →](/configuration/by-cloud-console/) |
+
+## Deploying to both Chrome and Edge simultaneously
+
+Chrome Tab Monitor can be deployed to both browsers in the same environment. The registry paths
+and Extension IDs differ per browser, so you need separate policy entries for each:
+
+- Chrome policies live under `SOFTWARE\Policies\Google\Chrome\…`
+- Edge policies live under `SOFTWARE\Policies\Microsoft\Edge\…`
+
+You can create separate GPOs for each browser and link both to the same OU, or combine them in a
+single GPO with separate Computer Configuration entries for Chrome and Edge. Both approaches are
+valid — separate GPOs are easier to manage and roll back independently.
+
+See [Registry Paths Reference](/reference/registry-paths/) for a side-by-side cheat sheet of all
+paths for both browsers.

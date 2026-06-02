@@ -1,0 +1,181 @@
+---
+title: Configure by Policy (GPO / Managed Storage)
+description: Configure Chrome Tab Monitor parameters via Chrome or Edge managed storage — ExtensionSettings for force-install and 3rd-party policy for parameter values.
+---
+
+import { Tabs, TabItem, Aside } from '@astrojs/starlight/components';
+
+Managed configuration uses `chrome.storage.managed` to deliver read-only policy values to the
+extension. Parameters set this way are **locked for end users** — the popup displays a **GPO**
+badge next to each locked field, and the input is disabled. Administrators control the values
+centrally through Group Policy, the Windows Registry, or a cloud management console.
+
+## How managed configuration works
+
+When Chrome Tab Monitor starts, it reads both `chrome.storage.sync` (the user's saved settings)
+and `chrome.storage.managed` (policy values). Managed values always win:
+
+```
+DEFAULT_CONFIG  →  chrome.storage.sync  →  chrome.storage.managed
+   (code)            (user edits)             (GPO — wins)
+```
+
+The extension tracks which keys came from managed storage and marks those fields with a **GPO**
+badge in the popup. Users cannot change managed fields until the policy is removed by the
+administrator.
+
+<Aside type="note">
+Only five parameters are included in the managed schema (`schema.json`) and can be locked by
+policy: `enabled`, `tabLimit`, `windowLimit`, `autoClose`, and `autoCloseWindows`.
+
+Parameters such as `notifications`, `pauseBetweenClosures`, `windowGracePeriod`, and `adminRole`
+are **not** policy-manageable — they are user-only settings that sync with the browser profile.
+See [Parameters Reference](/configuration/parameters-reference/) for the complete list.
+</Aside>
+
+---
+
+## Method 1 — ExtensionSettings (unified force-install + update URL)
+
+The `ExtensionSettings` policy handles both force-installation and the update URL in a single JSON
+entry. This is the cleanest approach for Active Directory environments with Chrome or Edge ADMX
+templates already installed.
+
+**GPMC path for Chrome:**
+*Computer Configuration ▸ Administrative Templates ▸ Google ▸ Google Chrome ▸ Extensions ▸
+"Extension management settings"*
+
+**GPMC path for Edge:**
+*Computer Configuration ▸ Administrative Templates ▸ Microsoft Edge ▸ Extensions ▸
+"Configure extension management settings"*
+
+Set the policy to **Enabled** and enter the JSON value for your browser:
+
+<Tabs syncKey="browser">
+  <TabItem label="Google Chrome">
+
+    ```json title="ExtensionSettings value — Chrome"
+    {
+      "<CHROME_EXTENSION_ID>": {
+        "installation_mode": "force_installed",
+        "update_url": "https://clients2.google.com/service/update2/crx"
+      }
+    }
+    ```
+
+    <details class="ps-block">
+    <summary>⚡ Apply via PowerShell (run as Administrator)</summary>
+
+    ```powershell
+    # Run as Administrator. Replace <CHROME_EXTENSION_ID> before running.
+    $ChromeID = "<CHROME_EXTENSION_ID>"
+
+    $Settings = "{`"$ChromeID`":{`"installation_mode`":`"force_installed`",`"update_url`":`"https://clients2.google.com/service/update2/crx`"}}"
+
+    $RegPath = "HKLM:\SOFTWARE\Policies\Google\Chrome"
+    if (-not (Test-Path $RegPath)) { New-Item -Path $RegPath -Force | Out-Null }
+    Set-ItemProperty -Path $RegPath -Name "ExtensionSettings" -Value $Settings -Type String
+
+    gpupdate /force
+    Write-Host "✔ ExtensionSettings applied. Restart Chrome to take effect." -ForegroundColor Green
+    ```
+
+    </details>
+
+  </TabItem>
+  <TabItem label="Microsoft Edge">
+
+    ```json title="ExtensionSettings value — Edge"
+    {
+      "<EDGE_EXTENSION_ID>": {
+        "installation_mode": "force_installed",
+        "update_url": "https://edge.microsoft.com/extensionwebstorebase/v1/crx"
+      }
+    }
+    ```
+
+    <details class="ps-block">
+    <summary>⚡ Apply via PowerShell (run as Administrator)</summary>
+
+    ```powershell
+    # Run as Administrator. Replace <EDGE_EXTENSION_ID> before running.
+    $EdgeID = "<EDGE_EXTENSION_ID>"
+
+    $Settings = "{`"$EdgeID`":{`"installation_mode`":`"force_installed`",`"update_url`":`"https://edge.microsoft.com/extensionwebstorebase/v1/crx`"}}"
+
+    $RegPath = "HKLM:\SOFTWARE\Policies\Microsoft\Edge"
+    if (-not (Test-Path $RegPath)) { New-Item -Path $RegPath -Force | Out-Null }
+    Set-ItemProperty -Path $RegPath -Name "ExtensionSettings" -Value $Settings -Type String
+
+    gpupdate /force
+    Write-Host "✔ ExtensionSettings applied. Restart Edge to take effect." -ForegroundColor Green
+    ```
+
+    </details>
+
+  </TabItem>
+</Tabs>
+
+---
+
+## Method 2 — Managed parameters (3rd-party extension policy)
+
+After force-installing the extension, deliver the five manageable parameters through the browser's
+**3rd-party extension policy** mechanism. This is what the extension reads from
+`chrome.storage.managed` at startup to determine which values are policy-locked.
+
+The parameters payload (adjust values to your organization's requirements):
+
+```json title="Managed parameters payload"
+{
+  "enabled": true,
+  "tabLimit": 6,
+  "windowLimit": 2,
+  "autoClose": true,
+  "autoCloseWindows": true
+}
+```
+
+See [Parameters Reference](/configuration/parameters-reference/) for the full description of each
+parameter, its allowed range, and its registry type.
+
+### How to deliver the parameters
+
+**Option A — Cloud console (recommended for cloud-managed fleets)**
+
+Paste the JSON payload into the **"Policy for extensions"** field in Google Admin Console or
+Microsoft Intune. The cloud console sends it to enrolled devices automatically on the next
+check-in. See [Configuration by Cloud Console](/configuration/by-cloud-console/) for detailed
+steps.
+
+**Option B — Windows Registry (3rd-party policy key)**
+
+Create one `REG_DWORD` value per parameter under the browser's 3rd-party extension policy key.
+The registry path and value types are:
+
+<Tabs syncKey="browser">
+  <TabItem label="Google Chrome">
+
+    ```
+    HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome\3rdparty\extensions\<CHROME_EXTENSION_ID>\policy
+    ```
+
+  </TabItem>
+  <TabItem label="Microsoft Edge">
+
+    ```
+    HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge\3rdparty\extensions\<EDGE_EXTENSION_ID>\policy
+    ```
+
+  </TabItem>
+</Tabs>
+
+For the exact `REG_DWORD` values, ready-to-use `.reg` files, and a PowerShell script that creates
+all registry entries in one run, see [Configuration by Registry](/configuration/by-registry/).
+
+<Aside type="note">
+After applying the policy and fully restarting the browser, open `chrome://policy` or
+`edge://policy` and click **Reload policies**. The extension's managed parameters should appear
+with **Status: OK**. In the extension popup, managed fields display the **GPO** badge and are
+grayed out (read-only).
+</Aside>

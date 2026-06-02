@@ -1,0 +1,137 @@
+<svg width="480" height="360" viewBox="0 0 480 360" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bg-glow" cx="50%" cy="45%" r="60%">
+      <stop offset="0%" stop-color="#0085ff" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#0085ff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="green-glow" cx="70%" cy="70%" r="50%">
+      <stop offset="0%" stop-color="#10b981" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#10b981" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="card-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#161c2e"/>
+      <stop offset="100%" stop-color="#0e1220"/>
+    </linearGradient>
+    <linearGradient id="blue-grad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0085ff"/>
+      <stop offset="100%" stop-color="#69b4ff"/>
+    </linearGradient>
+    <linearGradient id="green-grad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#34d399"/>
+    </linearGradient>
+    <pattern id="grid-pat" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0L0 0 0 40" fill="none" stroke="rgba(255,255,255,0.025)" stroke-width="0.5"/>
+    </pattern>
+    <filter id="card-shadow">
+      <feDropShadow dx="0" dy="12" stdDeviation="24" flood-color="#000" flood-opacity="0.5"/>
+    </filter>
+    <filter id="badge-glow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Base background -->
+  <rect width="480" height="360" fill="#0a0e1a"/>
+  <rect width="480" height="360" fill="url(#grid-pat)"/>
+  <rect width="480" height="360" fill="url(#bg-glow)"/>
+  <rect width="480" height="360" fill="url(#green-glow)"/>
+
+  <!-- ── Main card ── -->
+  <rect x="32" y="24" width="416" height="288" rx="20" fill="url(#card-bg)" stroke="rgba(0,133,255,0.2)" stroke-width="1" filter="url(#card-shadow)"/>
+
+  <!-- Card header bar -->
+  <rect x="32" y="24" width="416" height="52" rx="20" fill="#161c28"/>
+  <rect x="32" y="56" width="416" height="20" fill="#161c28"/>
+  <!-- Traffic lights -->
+  <circle cx="62" cy="50" r="5" fill="#ff5f56"/>
+  <circle cx="80" cy="50" r="5" fill="#ffbd2e"/>
+  <circle cx="98" cy="50" r="5" fill="#27c93f"/>
+  <!-- Header label -->
+  <text x="120" y="55" font-family="'JetBrains Mono', 'Courier New', monospace" font-size="11" fill="#64748b">Tab Monitor — Enterprise Dashboard</text>
+  <!-- Active indicator -->
+  <circle cx="390" cy="50" r="4" fill="#10b981"/>
+  <circle cx="390" cy="50" r="8" fill="#10b981" opacity="0.15"/>
+  <text x="402" y="54" font-family="Inter, Arial, sans-serif" font-size="9" font-weight="700" fill="#10b981" letter-spacing="1.2">ACTIVE</text>
+
+  <!-- ── Stat cards row ── -->
+  <!-- Tabs card (green: within limit) -->
+  <rect x="52" y="96" width="162" height="96" rx="12" fill="#0d111c" stroke="rgba(16,185,129,0.25)" stroke-width="1"/>
+  <rect x="52" y="96" width="162" height="3" rx="2" fill="url(#green-grad)"/>
+  <!-- Big number -->
+  <text x="72" y="143" font-family="'JetBrains Mono', monospace" font-size="36" font-weight="600" fill="#10b981">10</text>
+  <text x="72" y="162" font-family="Inter, Arial, sans-serif" font-size="8" font-weight="700" fill="#475569" letter-spacing="1.5">OPEN TABS</text>
+  <text x="72" y="175" font-family="Inter, Arial, sans-serif" font-size="8" fill="#475569" opacity="0.7">busiest: 5 / 6</text>
+  <!-- Progress bar -->
+  <rect x="72" y="180" width="126" height="4" rx="2" fill="#1e2736"/>
+  <rect x="72" y="180" width="105" height="4" rx="2" fill="url(#green-grad)"/>
+
+  <!-- Windows card (green: within limit) -->
+  <rect x="228" y="96" width="162" height="96" rx="12" fill="#0d111c" stroke="rgba(16,185,129,0.25)" stroke-width="1"/>
+  <rect x="228" y="96" width="162" height="3" rx="2" fill="url(#green-grad)"/>
+  <text x="248" y="143" font-family="'JetBrains Mono', monospace" font-size="36" font-weight="600" fill="#10b981">3</text>
+  <text x="248" y="162" font-family="Inter, Arial, sans-serif" font-size="8" font-weight="700" fill="#475569" letter-spacing="1.5">WINDOWS</text>
+  <text x="248" y="175" font-family="Inter, Arial, sans-serif" font-size="8" fill="#475569" opacity="0.7">limit: 4</text>
+  <rect x="248" y="180" width="126" height="4" rx="2" fill="#1e2736"/>
+  <rect x="248" y="180" width="95" height="4" rx="2" fill="url(#green-grad)"/>
+
+  <!-- Status badge: "All within limits" -->
+  <rect x="404" y="96" width="30" height="96" rx="10" fill="rgba(16,185,129,0.1)" stroke="rgba(16,185,129,0.2)" stroke-width="1"/>
+  <!-- Checkmark -->
+  <path d="M413 135 L418 141 L426 130" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+
+  <!-- ── Divider ── -->
+  <line x1="52" y1="212" x2="428" y2="212" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+
+  <!-- ── GPO Policy section ── -->
+  <!-- Section label -->
+  <rect x="52" y="224" width="3" height="14" rx="1.5" fill="url(#blue-grad)"/>
+  <text x="63" y="234" font-family="Inter, Arial, sans-serif" font-size="8" font-weight="700" fill="#64748b" letter-spacing="2">POLICY CONFIGURATION</text>
+
+  <!-- Row 1: Tab limit -->
+  <text x="52" y="264" font-family="Inter, Arial, sans-serif" font-size="12" fill="rgba(255,255,255,0.35)">Tab limit per window</text>
+  <rect x="296" y="252" width="38" height="20" rx="5" fill="#11161f" stroke="rgba(69,69,69,0.5)" stroke-width="1"/>
+  <text x="315" y="265" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="11" fill="rgba(255,255,255,0.35)">6</text>
+  <rect x="342" y="252" width="30" height="20" rx="4" fill="#0f141f" stroke="rgba(100,116,139,0.35)" stroke-width="1"/>
+  <text x="357" y="265" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="7" font-weight="700" fill="#475569" letter-spacing="0.8">GPO</text>
+
+  <!-- Row 2: Window limit -->
+  <text x="52" y="296" font-family="Inter, Arial, sans-serif" font-size="12" fill="rgba(255,255,255,0.35)">Window limit</text>
+  <rect x="296" y="284" width="38" height="20" rx="5" fill="#11161f" stroke="rgba(69,69,69,0.5)" stroke-width="1"/>
+  <text x="315" y="297" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="11" fill="rgba(255,255,255,0.35)">2</text>
+  <rect x="342" y="284" width="30" height="20" rx="4" fill="#0f141f" stroke="rgba(100,116,139,0.35)" stroke-width="1"/>
+  <text x="357" y="297" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="7" font-weight="700" fill="#475569" letter-spacing="0.8">GPO</text>
+
+  <!-- Auto-close toggles row -->
+  <text x="52" y="328" font-family="Inter, Arial, sans-serif" font-size="12" fill="rgba(255,255,255,0.35)">Auto-close enabled</text>
+  <!-- Toggle ON -->
+  <rect x="296" y="316" width="40" height="22" rx="11" fill="url(#blue-grad)" fill-opacity="0.7"/>
+  <circle cx="324" cy="327" r="8" fill="white" opacity="0.9"/>
+  <rect x="344" y="316" width="30" height="22" rx="4" fill="#0f141f" stroke="rgba(100,116,139,0.35)" stroke-width="1"/>
+  <text x="359" y="329" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="7" font-weight="700" fill="#475569" letter-spacing="0.8">GPO</text>
+
+  <!-- ── Floating accent line at bottom ── -->
+  <rect x="32" y="308" width="416" height="1" fill="rgba(0,133,255,0.08)"/>
+
+  <!-- ── Bottom labels ── -->
+  <!-- Chrome badge -->
+  <rect x="32" y="326" width="132" height="26" rx="7" fill="#0d111c" stroke="rgba(0,133,255,0.2)" stroke-width="1"/>
+  <circle cx="50" cy="339" r="7" fill="rgba(0,133,255,0.15)"/>
+  <circle cx="50" cy="339" r="4" fill="none" stroke="#0085ff" stroke-width="1.5"/>
+  <circle cx="50" cy="339" r="1.5" fill="#0085ff"/>
+  <text x="64" y="343" font-family="Inter, Arial, sans-serif" font-size="10" font-weight="600" fill="#94a3b8">Google Chrome</text>
+
+  <!-- Edge badge -->
+  <rect x="174" y="326" width="132" height="26" rx="7" fill="#0d111c" stroke="rgba(0,133,255,0.2)" stroke-width="1"/>
+  <circle cx="192" cy="339" r="7" fill="rgba(0,133,255,0.15)"/>
+  <!-- Edge "e" -->
+  <path d="M188 340 A5 5 0 1 1 197 342 L 189 342" stroke="#69b4ff" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+  <text x="206" y="343" font-family="Inter, Arial, sans-serif" font-size="10" font-weight="600" fill="#94a3b8">Microsoft Edge</text>
+
+  <!-- Manifest V3 badge -->
+  <rect x="316" y="326" width="132" height="26" rx="7" fill="#0d111c" stroke="rgba(0,133,255,0.2)" stroke-width="1"/>
+  <rect x="334" y="333" width="10" height="12" rx="2" fill="rgba(0,133,255,0.5)"/>
+  <path d="M 336 333 L 336 331 A 3 3 0 0 1 342 331 L 342 333" fill="none" stroke="#0085ff" stroke-width="1.2"/>
+  <text x="350" y="343" font-family="Inter, Arial, sans-serif" font-size="10" font-weight="600" fill="#94a3b8">Manifest V3</text>
+</svg>

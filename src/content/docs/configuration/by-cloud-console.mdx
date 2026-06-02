@@ -1,0 +1,198 @@
+---
+title: Configure via Cloud Console
+description: Deploy Chrome Tab Monitor and configure managed parameters using Google Admin Console (Chrome) or Microsoft Intune (Edge) without on-premises GPO.
+---
+
+import { Tabs, TabItem, Aside, Steps } from '@astrojs/starlight/components';
+
+Use the cloud console method for devices enrolled in **Google Workspace** (Chrome Browser Cloud
+Management) or **Microsoft Intune / Endpoint Manager** (Edge). No on-premises domain controller,
+ADMX templates, or registry edits are required — configuration propagates automatically to
+enrolled devices on the next check-in.
+
+## Before you begin
+
+- Admin access to **Google Admin Console** (`admin.google.com`) for Chrome deployments, **or**
+- Admin access to **Microsoft Intune** (`intune.microsoft.com`) for Edge deployments.
+- Extension IDs: `<CHROME_EXTENSION_ID>` for Chrome, `<EDGE_EXTENSION_ID>` for Edge.
+- Target devices must be **enrolled** in the respective management platform and show as active.
+
+<Aside type="tip">
+The cloud console is the **recommended deployment path** for fleets already enrolled in Google
+Workspace or Microsoft Intune. Changes propagate automatically without requiring on-premises
+infrastructure, ADMX imports, or manual registry edits on each machine.
+</Aside>
+
+---
+
+<Tabs syncKey="browser">
+  <TabItem label="Google Chrome">
+
+    ## Deploy via Google Admin Console
+
+    <Steps>
+
+    1. ### Sign in and navigate to the extension management page
+
+       Sign in to **https://admin.google.com** with your Google Workspace admin account.
+
+       Navigate to:
+       **Devices ▸ Chrome ▸ Apps & extensions ▸ Users & browsers**
+
+       Select the **organizational unit (OU)** that contains your managed Chrome devices. Policies
+       are applied per OU, so choose the one that matches your target group.
+
+    2. ### Add the extension and set force-install
+
+       Click the **+** button (bottom-right corner) → **Add from Chrome Web Store**.
+
+       Search for **Chrome Tab Monitor** in the search box, or paste `<CHROME_EXTENSION_ID>`
+       directly in the search field to find it by ID.
+
+       Once found, select the extension and click **Select**.
+
+       In the **Installation policy** column for the extension, click the dropdown and select
+       **Force install**. This silently installs the extension on all devices in the selected OU
+       and prevents users from removing it.
+
+    3. ### Configure managed parameters
+
+       Click on the extension entry row to open its detail panel on the right side of the screen.
+
+       Scroll down to the **"Policy for extensions"** field and paste the following JSON, adjusting
+       the values to match your organization's requirements:
+
+       ```json title="Policy for extensions — Google Admin Console"
+       {
+         "enabled": true,
+         "tabLimit": 6,
+         "windowLimit": 2,
+         "autoClose": true,
+         "autoCloseWindows": true
+       }
+       ```
+
+       See [Parameters Reference](/configuration/parameters-reference/) for allowed ranges and
+       descriptions of each parameter.
+
+    4. ### Save and verify propagation
+
+       Click **Save** (top-right corner of the Admin Console).
+
+       The policy propagates to enrolled devices automatically on the next check-in. Propagation
+       typically takes **15–30 minutes** depending on your domain's sync interval.
+
+       To verify on a managed device:
+       - Open `chrome://policy` and click **Reload policies**.
+       - Under **Extension policies**, find `<CHROME_EXTENSION_ID>` and confirm all five
+         parameters appear with **Status: OK**.
+       - Open the extension popup — managed fields display a **GPO** badge and are grayed out.
+
+    </Steps>
+
+  </TabItem>
+  <TabItem label="Microsoft Edge">
+
+    ## Deploy via Microsoft Intune
+
+    Intune uses **Configuration profiles** to push Edge policies to enrolled Windows devices.
+    You will create one profile to force-install the extension and configure the managed parameters.
+
+    <Steps>
+
+    1. ### Sign in to Microsoft Intune
+
+       Sign in to **https://intune.microsoft.com** with your Intune administrator account.
+
+       Navigate to **Devices ▸ Configuration profiles**.
+
+    2. ### Create a configuration profile for Edge
+
+       Click **Create ▸ New policy**.
+
+       - **Platform:** Windows 10 and later
+       - **Profile type:** Settings catalog
+
+       Click **Create**, give the profile a name (for example: `Edge - Tab Monitor Policy`), and
+       click **Next**.
+
+    3. ### Add the force-install setting
+
+       In the **Configuration settings** step, click **Add settings**.
+
+       Search for **Microsoft Edge – Extensions** in the settings picker. Find and enable:
+       - **"Control which extensions are installed silently"**
+
+       Add the following value in the entry field:
+
+       ```
+       <EDGE_EXTENSION_ID>;https://edge.microsoft.com/extensionwebstorebase/v1/crx
+       ```
+
+       If the extension is only available on the Chrome Web Store (not Edge Add-ons), use:
+
+       ```
+       <CHROME_EXTENSION_ID>;https://clients2.google.com/service/update2/crx
+       ```
+
+       In that case, also add the setting **"Allow specific extensions to be installed"** and add
+       the same Extension ID to the allowlist.
+
+    4. ### Configure managed parameters via OMA-URI
+
+       To deliver the five manageable parameters to the extension, add a **Custom OMA-URI** setting.
+       Still in the Settings catalog step, click **Add settings** → search for **"Extension
+       management settings"** under Microsoft Edge – Extensions.
+
+       Enter the following JSON as the setting value. This uses the `ExtensionSettings` key to
+       combine the force-install configuration with the 3rd-party policy for the extension:
+
+       ```json title="ExtensionSettings — Intune"
+       {
+         "<EDGE_EXTENSION_ID>": {
+           "installation_mode": "force_installed",
+           "update_url": "https://edge.microsoft.com/extensionwebstorebase/v1/crx",
+           "runtime_blocked_hosts": [],
+           "toolbar_state": "default_shown"
+         }
+       }
+       ```
+
+       <Aside type="note">
+       The `ExtensionSettings` key handles force-install. To deliver the five managed parameters
+       (`tabLimit`, `windowLimit`, etc.), you must separately configure the 3rd-party extension
+       policy for the extension. The simplest way is to use a **Custom OMA-URI** entry:
+
+       - **OMA-URI:** `./Device/Vendor/MSFT/Policy/Config/MicrosoftEdge~Policy~microsoft_edge~Extensions/ExtensionSettings`
+       - **Data type:** String
+       - **Value:** The JSON above combined with the parameter payload
+
+       Alternatively, use the **Registry** method on each device — see
+       [Configuration by Registry](/configuration/by-registry/).
+       </Aside>
+
+    5. ### Assign the profile and verify
+
+       Complete the wizard:
+       - **Assignments:** select the device group or OU that contains your target Edge devices.
+       - Click **Review + create**, then **Create**.
+
+       The profile is pushed to assigned devices on the next Intune sync (typically 15–60 minutes,
+       or trigger a manual sync from the Company Portal app on the device).
+
+       To verify on a managed device:
+       - Open `edge://policy` and click **Reload policies**.
+       - Confirm the extension policy values appear with **Status: OK**.
+       - Open the extension popup — managed fields display the **GPO** badge and are grayed out.
+
+    </Steps>
+
+  </TabItem>
+</Tabs>
+
+<Aside type="note">
+Parameters `notifications`, `pauseBetweenClosures`, `windowGracePeriod`, and `adminRole` are
+**not** in the extension's managed schema and cannot be set via the cloud console. End users
+configure those through the extension popup. See
+[Parameters Reference](/configuration/parameters-reference/) for details.
+</Aside>

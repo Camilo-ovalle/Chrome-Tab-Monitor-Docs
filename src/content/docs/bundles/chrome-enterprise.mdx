@@ -1,0 +1,160 @@
+---
+title: Chrome Enterprise Bundle
+description: Download Chrome Enterprise policy templates, import ADMX files, and force-install Chrome Tab Monitor via GPO on managed Google Chrome devices.
+---
+
+import { Steps, Aside, FileTree } from '@astrojs/starlight/components';
+
+This guide walks you through deploying Chrome Tab Monitor to a fleet of managed Google Chrome
+installations using the Chrome Enterprise policy templates and Group Policy Objects (GPO).
+At the end of this procedure, the extension will be silently installed and policy-pinned on every
+machine in the target OU — end users cannot remove it.
+
+## Before you begin
+
+Verify the following before starting:
+
+- You have **domain administrator** rights and access to the **Group Policy Management Console
+  (GPMC)** on the domain controller.
+- The **ADMX Central Store** is configured at
+  `\\<domain>\SYSVOL\<domain>\Policies\PolicyDefinitions\` (recommended), or you are deploying
+  the policy on a standalone machine.
+- You have the extension's **Chrome Web Store ID**: `<CHROME_EXTENSION_ID>`.
+
+<Aside type="caution">
+All steps in sections 2 and 3 must be performed on the **domain controller** or from a machine
+with RSAT (Remote Server Administration Tools) installed. Registry-only deployments can be done
+directly on the target machine (see [Configuration by Registry](/configuration/by-registry/)).
+</Aside>
+
+---
+
+<Steps>
+
+1. ## Download the Chrome Enterprise policy templates
+
+   Navigate to **https://chromeenterprise.google/browser/download/** and download the
+   **"Chrome browser policy templates"** bundle (`policy_templates.zip`).
+
+   Extract the archive. The files you need are under `windows/admx/`:
+
+   <FileTree>
+   - policy_templates/
+     - windows/
+       - admx/
+         - **chrome.admx**
+         - **google.admx**
+         - en-US/
+           - **chrome.adml**
+           - **google.adml**
+         - es-ES/
+           - chrome.adml
+           - google.adml
+   </FileTree>
+
+   You need both `chrome.admx` and `google.admx` — Chrome ADMX templates depend on the Google
+   namespace defined in `google.admx`, so both files are required.
+
+2. ## Import ADMX files into the Central Store
+
+   Copy the `.admx` files and their corresponding `.adml` language files to the Central Store on
+   your domain controller. The Central Store path follows this pattern:
+
+   ```
+   \\<domain>\SYSVOL\<domain>\Policies\PolicyDefinitions\
+   ```
+
+   **Files to copy:**
+
+   | Source file | Destination |
+   |-------------|-------------|
+   | `chrome.admx` | `PolicyDefinitions\chrome.admx` |
+   | `google.admx` | `PolicyDefinitions\google.admx` |
+   | `en-US\chrome.adml` | `PolicyDefinitions\en-US\chrome.adml` |
+   | `en-US\google.adml` | `PolicyDefinitions\en-US\google.adml` |
+
+   For a **standalone machine** without a Central Store, copy the files to the local folder:
+
+   ```
+   C:\Windows\PolicyDefinitions\
+   C:\Windows\PolicyDefinitions\en-US\
+   ```
+
+   **Verify the import:** Open any GPO in the Group Policy Management Editor and navigate to
+   `Computer Configuration > Administrative Templates > Google`. If you see the Google and Google
+   Chrome categories with all their policies listed, the templates are loaded correctly.
+
+3. ## Create a GPO and force-install the extension
+
+   Open **Group Policy Management** (`gpmc.msc`) on the domain controller.
+
+   1. Right-click the target OU → **Create a GPO in this domain, and Link it here**.
+   2. Name the GPO (for example: `Chrome - Force Install Tab Monitor`) and click **OK**.
+   3. Right-click the new GPO → **Edit** to open the Group Policy Management Editor.
+   4. Navigate to:
+      **Computer Configuration ▸ Administrative Templates ▸ Google ▸ Google Chrome ▸ Extensions ▸
+      "Configure the list of force-installed apps and extensions"**
+   5. Set the policy to **Enabled**.
+   6. Click **Show…** and add the following entry in the **Value** column:
+
+      ```
+      <CHROME_EXTENSION_ID>;https://clients2.google.com/service/update2/crx
+      ```
+
+   7. Click **OK**, then close the Group Policy Management Editor.
+
+   <details class="ps-block">
+   <summary>⚡ Faster: apply via PowerShell (run as Administrator)</summary>
+
+   Use this script on any target machine to create the force-install registry entry and refresh
+   policies in one step. Replace `<CHROME_EXTENSION_ID>` with the real store ID before running.
+
+   ```powershell
+   # Run as Administrator
+   $ExtensionID  = "<CHROME_EXTENSION_ID>"
+   $UpdateURL    = "https://clients2.google.com/service/update2/crx"
+   $RegPath      = "HKLM:\SOFTWARE\Policies\Google\Chrome\ExtensionInstallForcelist"
+
+   if (-not (Test-Path $RegPath)) {
+       New-Item -Path $RegPath -Force | Out-Null
+   }
+   Set-ItemProperty -Path $RegPath -Name "1" -Value "$ExtensionID;$UpdateURL" -Type String
+
+   Write-Host "✔ Force-install entry created." -ForegroundColor Green
+   gpupdate /force
+   Write-Host "✔ Policies refreshed. Restart Chrome to apply." -ForegroundColor Green
+   ```
+
+   </details>
+
+4. ## Apply the policy and verify
+
+   On a target machine in the OU, open a command prompt or PowerShell **as Administrator** and run:
+
+   ```powershell
+   gpupdate /force
+   ```
+
+   Fully close and reopen Google Chrome (all windows must be closed).
+
+   Open `chrome://policy` in the address bar and click **Reload policies**. Confirm:
+
+   - **ExtensionInstallForcelist** appears under **Chrome Policies** and contains your extension
+     entry (`<CHROME_EXTENSION_ID>;https://clients2.google.com/service/update2/crx`).
+   - The **Status** column shows **OK** (not "Error" or "Ignored").
+
+   Open `chrome://extensions` and confirm the extension is listed as **"Installed by enterprise
+   policy"** with the **Remove** button absent or disabled.
+
+</Steps>
+
+<Aside type="note">
+The update URL `https://clients2.google.com/service/update2/crx` is the standard Chrome Web Store
+update endpoint. Chrome checks this URL periodically to keep the extension up to date
+automatically. If you host the extension on an internal update server instead, replace this URL
+with your internal manifest URL.
+
+After confirming the force-install, proceed to configure the managed parameters:
+- [Configuration by Policy](/configuration/by-policy/) — via GPO managed storage JSON
+- [Configuration by Registry](/configuration/by-registry/) — via direct registry values
+</Aside>

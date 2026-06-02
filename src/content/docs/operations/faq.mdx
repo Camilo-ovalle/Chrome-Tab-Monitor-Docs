@@ -1,0 +1,117 @@
+---
+title: FAQ
+description: Frequently asked questions about deploying, configuring, and administering Chrome Tab Monitor in managed enterprise environments.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+## Can I manage `notifications`, `pauseBetweenClosures`, or `windowGracePeriod` by policy?
+
+**No.** These parameters are not declared in `schema.json` and cannot be delivered or locked via
+Group Policy, Windows Registry 3rd-party policy, or the cloud console. Placing them in the
+`…\policy` registry key has no effect — the extension ignores keys absent from the managed schema.
+
+These are **user-only settings** that sync with the browser profile via `chrome.storage.sync`.
+End users configure them through the extension popup. See
+[Parameters Reference](/configuration/parameters-reference/) for the complete list.
+
+---
+
+## Does Chrome Tab Monitor work on macOS and Linux?
+
+**Yes** — the extension runs on any platform that supports Chrome or Edge with Manifest V3.
+However, the **GPO and Windows Registry** configuration methods are Windows-only.
+
+On **macOS** and **Linux**, use the browser's managed JSON policy approach:
+
+- **Linux (Chrome):** Place a JSON file at `/etc/opt/chrome/policies/managed/tab-monitor.json`
+- **macOS:** Deploy a configuration profile (plist) via MDM (Jamf, Apple Business Manager)
+
+See [Cross-platform Managed Configuration](/reference/cross-platform/) for file paths and examples.
+
+---
+
+## Is the Extension ID the same on Chrome and Edge?
+
+**Not necessarily.** The Chrome Web Store and Edge Add-ons store assign independent IDs. Even if
+you publish the same extension to both stores, each generates a different ID.
+
+Always use the correct ID for each browser:
+
+- Chrome deployments → `<CHROME_EXTENSION_ID>` (from Chrome Web Store)
+- Edge deployments → `<EDGE_EXTENSION_ID>` (from Edge Add-ons Partner Center)
+
+Confirm each ID on the store listing page, or by opening `chrome://extensions` /
+`edge://extensions` with developer mode enabled and reading the ID shown below the extension name.
+
+---
+
+## Can end users bypass the tab or window limits managed by policy?
+
+**No.** When `tabLimit` or `windowLimit` are delivered via `chrome.storage.managed`, the extension
+always uses the managed value. Those fields are read-only in the popup (GPO badge visible), and
+the managed value overrides any value the user previously saved in sync storage.
+
+If `autoClose` and `autoCloseWindows` are also set to `true` by policy, tabs and windows are
+closed automatically without user interaction. There is no in-browser way to override this while
+the policy entry remains active in the management source.
+
+---
+
+## Do tab and window limits apply per user profile, or per machine?
+
+Tab limits are enforced **per browser window** in the current session. The `tabLimit` applies to
+each individual open window; the `windowLimit` applies to the total count of open windows.
+
+Registry values at `HKEY_LOCAL_MACHINE` apply to **all users on the machine**, regardless of
+which Windows account is logged in. All users on the same device share the same enforced limits —
+there is no per-user policy override through the registry at the machine level.
+
+---
+
+## What happens if `autoClose` is set to `false`?
+
+If `autoClose` is `false`, the extension does **not** close tabs automatically when the limit is
+exceeded. Instead, it issues a browser notification (if `notifications` is `true`) to alert the
+user that the tab limit has been reached. The user must manually close excess tabs.
+
+The same logic applies to `autoCloseWindows`: when `false`, a countdown warning appears
+(duration controlled by `windowGracePeriod`) but no window is closed without user action.
+
+<Aside type="note">
+Setting `autoClose` to `false` via policy is useful for organizations that want to warn users
+about tab limits without enforcing automatic closure — useful during an initial rollout phase
+where you want to observe behavior before enforcing hard limits.
+</Aside>
+
+---
+
+## How long does it take for policy changes to reach devices?
+
+| Method | Typical propagation time | How to speed it up |
+|--------|--------------------------|-------------------|
+| GPO (AD domain) | 90 ± 30 minutes (default refresh cycle) | `gpupdate /force` on the target machine |
+| Google Admin Console | 15–30 minutes | Trigger a device sync from the Admin Console |
+| Microsoft Intune | 15–60 minutes | Trigger a manual sync from the Company Portal app |
+| Direct registry | Immediate (local machine only) | Run `gpupdate /force`, then restart the browser |
+
+After the policy reaches the device, the browser must be **fully restarted** — all windows closed
+and the browser reopened — for the extension to read the new managed values.
+
+---
+
+## Can I deploy the extension without publishing it to a public store?
+
+**Yes** — you can self-host the extension package (`.crx`) on an internal web server and use a
+custom manifest URL in the force-install policy:
+
+1. Package the extension as a `.crx` and host it at an internal URL.
+2. Create an XML update manifest (`update.xml`) describing the extension version and download URL.
+3. In the force-install registry value or GPO entry, replace the store update URL with the URL
+   to your `update.xml`.
+4. Add the `ExtensionInstallSources` policy to allow the browser to install `.crx` files from
+   your internal server domain.
+
+Self-hosting is outside the scope of this guide. See the
+[Chrome Enterprise documentation on extension self-hosting](https://developer.chrome.com/docs/extensions/how-to/distribute/host-on-linux)
+for detailed instructions.

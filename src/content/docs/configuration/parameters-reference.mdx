@@ -1,0 +1,91 @@
+---
+title: Parameters Reference
+description: Canonical reference for all Chrome Tab Monitor configuration parameters — which are policy-manageable, their types, defaults, ranges, and precedence rules.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+This is the authoritative reference for all Chrome Tab Monitor configuration parameters. All data
+is sourced directly from `schema.json` (the managed schema declared in `manifest.json`) and
+`DEFAULT_CONFIG` in the extension source (`src/background/utils/config.ts`).
+
+---
+
+## Policy-manageable parameters
+
+The following five parameters are declared in `schema.json` and can be locked by Group Policy,
+Windows Registry (3rd-party extension policy key), or the cloud console **"Policy for
+extensions"** field. When a parameter is managed, the corresponding field in the popup is
+grayed out and displays a **GPO** badge — end users cannot change it.
+
+| Parameter | JSON type | Registry type | Default | Range / values | Description |
+|-----------|-----------|---------------|---------|----------------|-------------|
+| `enabled` | `boolean` | `REG_DWORD` (0 or 1) | `true` | — | Activates or deactivates global tab and window monitoring. Set to `0` / `false` to disable enforcement without uninstalling the extension. |
+| `tabLimit` | `integer` | `REG_DWORD` | `6` | 1–100 | Maximum number of tabs allowed per browser window. When a new tab exceeds this limit, the oldest tab in the window is closed automatically (if `autoClose` is `true`). |
+| `windowLimit` | `integer` | `REG_DWORD` | `2` | 1–10 | Maximum number of simultaneous browser windows. When a new window exceeds this limit, the oldest window is closed automatically (if `autoCloseWindows` is `true`). |
+| `autoClose` | `boolean` | `REG_DWORD` (0 or 1) | `true` | — | Enables automatic closure of tabs that exceed `tabLimit`. If `false`, the extension warns the user via notification but does not close any tabs. |
+| `autoCloseWindows` | `boolean` | `REG_DWORD` (0 or 1) | `true` | — | Enables automatic closure of windows that exceed `windowLimit`. If `false`, a countdown warning is shown (`windowGracePeriod` ms) but no window is closed automatically. |
+
+<Aside type="caution">
+In `.reg` files, `REG_DWORD` values must be written in **hexadecimal**. The table above shows
+decimal for readability. Common conversions:
+
+| Decimal | Hex (.reg format) |
+|---------|-------------------|
+| `1` | `dword:00000001` |
+| `6` | `dword:00000006` |
+| `10` | `dword:0000000a` |
+| `20` | `dword:00000014` |
+
+See [Configuration by Registry](/configuration/by-registry/) for ready-to-use `.reg` files with
+the correct hex format already applied.
+</Aside>
+
+---
+
+## Non-manageable parameters (user-only)
+
+The following parameters exist in the extension's `DEFAULT_CONFIG` but are **not** declared in
+`schema.json`. They cannot be set or locked via Group Policy, Registry 3rd-party policy, or cloud
+console. Setting them in the `…\policy` registry key has no effect — the extension silently
+ignores keys that are absent from the managed schema.
+
+End users configure these through the extension popup; values sync across devices via
+`chrome.storage.sync`.
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `notifications` | `true` | Show browser notifications when tabs or windows are closed automatically. Disabling this silences desktop alerts but does not change enforcement behavior. |
+| `pauseBetweenClosures` | `1000` ms | Delay between successive automatic tab closures (in milliseconds). A small pause prevents triggering browser anti-automation throttles when closing multiple tabs in rapid succession. |
+| `windowGracePeriod` | `5000` ms | Duration of the countdown warning shown before an excess window is automatically closed (in milliseconds). Only visible when `autoCloseWindows` is `true`. |
+| `adminRole` | `false` | When `true`, reveals the configuration panel and activity log sections in the extension popup. Intended for development and IT troubleshooting — not for production policy use. |
+
+---
+
+## Configuration precedence
+
+The extension merges values from three sources at startup. Higher-priority sources override
+lower-priority ones:
+
+```
+1. DEFAULT_CONFIG           (lowest — code defaults)
+       ↓ overridden by
+2. chrome.storage.sync      (user edits, synced across the browser profile)
+       ↓ overridden by
+3. chrome.storage.managed   (highest — GPO / Registry / cloud console)
+```
+
+**Policy always wins.** A value in `chrome.storage.managed` overrides the user's sync value and
+locks the field in the popup. The user cannot change a managed field until the administrator
+removes the policy entry and the browser is restarted.
+
+This precedence is implemented in `getMergedConfig()` in `src/background/utils/config.ts`:
+
+```typescript
+const values = {
+  ...DEFAULT_CONFIG,
+  ...localConfig,     // chrome.storage.sync
+  ...managedConfig,   // chrome.storage.managed — always wins
+  adminRole: false,   // adminRole is never persisted; always reset to DEFAULT_CONFIG value
+};
+```

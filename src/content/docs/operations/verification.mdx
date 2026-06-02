@@ -1,0 +1,163 @@
+---
+title: Verification
+description: Confirm that Chrome Tab Monitor is policy-installed and that managed parameters are correctly applied on a target device.
+---
+
+import { Steps, Aside, Tabs, TabItem } from '@astrojs/starlight/components';
+
+Run these checks after every deployment or configuration change to confirm that the policy reached
+the target device and that the extension is reading it correctly.
+
+## Before you begin
+
+- The force-install entry and managed parameters have been applied via GPO, Registry, or cloud
+  console.
+- You have access to a managed device in the target OU or device group.
+- The device has had sufficient time to receive the policy (either the GPO refresh cycle has
+  elapsed, or you ran `gpupdate /force`).
+
+---
+
+<Steps>
+
+1. ## Force a policy refresh on the target device
+
+   Open a command prompt or PowerShell **as Administrator** on the target device and run:
+
+   ```powershell
+   gpupdate /force
+   ```
+
+   This forces the device to pull the latest Group Policy settings from the domain controller
+   without waiting for the next automatic refresh cycle (default: every 90 minutes ± 30 minutes).
+
+   If deploying via **Google Admin Console** or **Microsoft Intune**, trigger a manual sync or wait
+   for the device's next check-in (typically 15–30 minutes for Google, 15–60 minutes for Intune).
+
+   <details class="ps-block">
+   <summary>⚡ Verify registry values via PowerShell (run as Administrator)</summary>
+
+   Run this script to check that the force-install and parameter entries exist in the registry
+   before opening the browser. Replace the placeholder with the real Extension ID.
+
+   ```powershell
+   # Run as Administrator
+   $ChromeID  = "<CHROME_EXTENSION_ID>"
+   $EdgeID    = "<EDGE_EXTENSION_ID>"
+
+   Write-Host "`n=== Chrome Force-Install ===" -ForegroundColor Cyan
+   Get-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Google\Chrome\ExtensionInstallForcelist" `
+       -ErrorAction SilentlyContinue | Format-List
+
+   Write-Host "=== Chrome Managed Parameters ===" -ForegroundColor Cyan
+   $chromePath = "HKLM:\SOFTWARE\Policies\Google\Chrome\3rdparty\extensions\$ChromeID\policy"
+   if (Test-Path $chromePath) {
+       Get-ItemProperty -Path $chromePath |
+           Select-Object enabled, tabLimit, windowLimit, autoClose, autoCloseWindows |
+           Format-List
+   } else {
+       Write-Host "  ⚠ No managed parameters found for Chrome ID: $ChromeID" -ForegroundColor Yellow
+   }
+
+   Write-Host "=== Edge Force-Install ===" -ForegroundColor Cyan
+   Get-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Edge\ExtensionInstallForcelist" `
+       -ErrorAction SilentlyContinue | Format-List
+
+   Write-Host "=== Edge Managed Parameters ===" -ForegroundColor Cyan
+   $edgePath = "HKLM:\SOFTWARE\Policies\Microsoft\Edge\3rdparty\extensions\$EdgeID\policy"
+   if (Test-Path $edgePath) {
+       Get-ItemProperty -Path $edgePath |
+           Select-Object enabled, tabLimit, windowLimit, autoClose, autoCloseWindows |
+           Format-List
+   } else {
+       Write-Host "  ⚠ No managed parameters found for Edge ID: $EdgeID" -ForegroundColor Yellow
+   }
+   ```
+
+   </details>
+
+2. ## Restart the browser completely
+
+   Fully close the browser — all windows must be closed. A tab reload or profile switch is not
+   sufficient; the extension reads `chrome.storage.managed` only on browser startup.
+
+   Reopen the browser after closing.
+
+   <Aside type="caution">
+   If the browser is pinned to the taskbar or system tray, right-click the icon and choose
+   **Close window** (or **Exit**) to ensure the process terminates. Then reopen it normally.
+   </Aside>
+
+3. ## Check the browser policy page
+
+   Open the policy page in the address bar:
+
+   <Tabs syncKey="browser">
+     <TabItem label="Google Chrome">
+       ```
+       chrome://policy
+       ```
+     </TabItem>
+     <TabItem label="Microsoft Edge">
+       ```
+       edge://policy
+       ```
+     </TabItem>
+   </Tabs>
+
+   Click **Reload policies** at the top of the page.
+
+   Confirm the following entries appear with **Status: OK**:
+
+   | Policy key | Expected value |
+   |------------|----------------|
+   | `ExtensionInstallForcelist` | Contains `<EXTENSION_ID>;https://…` for your browser |
+   | Extension policy for `<ID>` | Shows `tabLimit`, `windowLimit`, and the other parameters with your configured values |
+
+   If any entry shows **Status: Error** or **Ignored**, see
+   [Troubleshooting](/operations/troubleshooting/) for the corresponding cause and fix.
+
+4. ## Confirm GPO badges in the extension popup
+
+   Click the Chrome Tab Monitor icon in the browser toolbar to open the popup.
+
+   Each parameter that is managed by policy — `enabled`, `tabLimit`, `windowLimit`, `autoClose`,
+   `autoCloseWindows` — should display a **GPO** badge next to the field label. The input for
+   those fields is grayed out and cannot be edited by the user.
+
+   If a field is editable (no badge), the policy for that parameter was not applied. Check the
+   registry path, verify the Extension ID matches exactly, and confirm a full browser restart was
+   performed.
+
+5. ## (Optional) Confirm the extension is policy-pinned
+
+   Open the extensions management page:
+
+   <Tabs syncKey="browser">
+     <TabItem label="Google Chrome">
+       ```
+       chrome://extensions
+       ```
+     </TabItem>
+     <TabItem label="Microsoft Edge">
+       ```
+       edge://extensions
+       ```
+     </TabItem>
+   </Tabs>
+
+   Find **Chrome Tab Monitor** in the list and confirm:
+
+   - The extension is listed as **"Installed by enterprise policy"** (Chrome) or
+     **"Installed by your organization"** (Edge).
+   - The **Remove** button is absent or disabled — users cannot uninstall the extension.
+   - The extension toggle is present but grayed out (users cannot disable it either, as long as
+     it remains in the force-install list).
+
+</Steps>
+
+<Aside type="note">
+If all five checks pass, the deployment is complete and functioning correctly. For ongoing
+maintenance, re-run steps 1 and 3 any time you change the parameter values in the policy. A full
+browser restart is required after each policy change.
+</Aside>
