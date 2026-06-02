@@ -6,8 +6,8 @@ import starlightThemeSix from '@six-tech/starlight-theme-six';
 // https://astro.build/config
 export default defineConfig({
 	// Replace this URL with the real hosting domain before publishing.
-	site: 'https://docs-placeholder.example.com',
-	// base: '/tab-monitor-docs', // uncomment if served under a sub-path
+	site: 'https://camilo-ovalle.github.io',
+	base: '/Chrome-Tab-Monitor-Docs', // uncomment if served under a sub-path
 
 	integrations: [
 		starlight({
