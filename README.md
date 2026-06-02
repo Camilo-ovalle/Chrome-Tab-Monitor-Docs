@@ -1,49 +1,104 @@
-# Starlight Starter Kit: Basics
+# Chrome Tab Monitor — Documentation Site
 
-[![Built with Starlight](https://astro.badg.es/v2/built-with-starlight/tiny.svg)](https://starlight.astro.build)
+Enterprise deployment and administration guide for the **Chrome Tab Monitor** browser extension. Covers force-installation via Group Policy, managed parameter configuration, and fleet-wide operations for Google Chrome and Microsoft Edge.
 
-```
-npm create astro@latest -- --template starlight
-```
+Built with [Astro](https://astro.build) + [Starlight](https://starlight.astro.build).
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+---
 
-## 🚀 Project Structure
+## Stack
 
-Inside of your Astro + Starlight project, you'll see the following folders and files:
+| Tool | Version |
+| :--- | :------ |
+| Astro | 6 |
+| Starlight | 0.39 |
+| Theme | `@six-tech/starlight-theme-six` |
+| Fonts | Inter · JetBrains Mono (`@fontsource`) |
+
+---
+
+## Project Structure
 
 ```
 .
 ├── public/
+│   └── favicon.svg
 ├── src/
 │   ├── assets/
+│   │   └── transparent.png
 │   ├── content/
 │   │   └── docs/
+│   │       ├── index.mdx                          # Landing page
+│   │       ├── getting-started/
+│   │       │   ├── overview.mdx
+│   │       │   ├── prerequisites.mdx
+│   │       │   └── deployment-paths.mdx
+│   │       ├── bundles/
+│   │       │   ├── chrome-enterprise.mdx
+│   │       │   └── microsoft-edge.mdx
+│   │       ├── configuration/
+│   │       │   ├── by-policy.mdx
+│   │       │   ├── by-registry.mdx
+│   │       │   ├── by-cloud-console.mdx
+│   │       │   └── parameters-reference.mdx
+│   │       ├── operations/
+│   │       │   ├── verification.mdx
+│   │       │   ├── troubleshooting.mdx
+│   │       │   └── faq.mdx
+│   │       └── reference/
+│   │           ├── registry-paths.mdx
+│   │           └── cross-platform.mdx
+│   ├── overrides/
+│   │   └── SiteTitle.astro
+│   ├── styles/
+│   │   └── custom.css
 │   └── content.config.ts
 ├── astro.config.mjs
 ├── package.json
 └── tsconfig.json
 ```
 
-Starlight looks for `.md` or `.mdx` files in the `src/content/docs/` directory. Each file is exposed as a route based on its file name.
+---
 
-Images can be added to `src/assets/` and embedded in Markdown with a relative link.
+## Commands
 
-Static assets, like favicons, can be placed in the `public/` directory.
+Run from the project root:
 
-## 🧞 Commands
+| Command | Action |
+| :------ | :----- |
+| `npm install` | Install dependencies |
+| `npm run dev` | Start dev server at `localhost:4321` |
+| `npm run build` | Build production site to `./dist/` |
+| `npm run preview` | Preview production build locally |
 
-All commands are run from the root of the project, from a terminal:
+---
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
+## Deployment paths covered
 
-## 👀 Want to learn more?
+- **GPO + ADMX** — Active Directory with Chrome or Edge ADMX templates
+- **Windows Registry** — `.reg` files and PowerShell scripts for standalone machines
+- **Cloud Console** — Google Admin Console (Chrome) and Microsoft Intune (Edge)
+- **Linux / macOS** — Managed JSON policy files
 
-Check out [Starlight’s docs](https://starlight.astro.build/), read [the Astro documentation](https://docs.astro.build), or jump into the [Astro Discord server](https://astro.build/chat).
+## Placeholders
+
+The following values must be replaced before publishing:
+
+| Placeholder | Where |
+| :---------- | :---- |
+| `<CHROME_EXTENSION_ID>` | All pages referencing Chrome Web Store ID |
+| `<EDGE_EXTENSION_ID>` | All pages referencing Edge Add-ons store ID |
+| `site:` in `astro.config.mjs` | Replace `https://docs-placeholder.example.com` with the real domain |
+
+## Phase 2 — Spanish translation (pending)
+
+The sidebar already includes `translations: { es: '...' }` keys for all groups. To activate Spanish:
+
+1. Create `src/content/docs/es/` mirror of all 15 pages.
+2. Add `locales: { es: { label: 'Español', lang: 'es' } }` to `astro.config.mjs`.
+
+---
+
+## Related repositories
+
+- Extension source: [`Tab-Limiter-chrome-Extension`](https://github.com/Camilo-ovalle/Tab-Limiter-chrome-Extension)
