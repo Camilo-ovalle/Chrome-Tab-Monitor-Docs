@@ -19,7 +19,7 @@ Verify the following before starting:
 - The **ADMX Central Store** is configured at
   `\\<domain>\SYSVOL\<domain>\Policies\PolicyDefinitions\` (recommended), or you are deploying
   the policy on a standalone machine.
-- You have the extension's **Chrome Web Store ID**: `<CHROME_EXTENSION_ID>`.
+- You have the extension's **Chrome Web Store ID**: `apbgiakfdalcpmnopopopookdceecnfj`.
 
 <Aside type="caution">
 All steps in sections 2 and 3 must be performed on the **domain controller** or from a machine
@@ -98,7 +98,7 @@ directly on the target machine (see [Configuration by Registry](/configuration/b
    6. Click **Show…** and add the following entry in the **Value** column:
 
       ```
-      <CHROME_EXTENSION_ID>;https://clients2.google.com/service/update2/crx
+      apbgiakfdalcpmnopopopookdceecnfj;https://clients2.google.com/service/update2/crx
       ```
 
    7. Click **OK**, then close the Group Policy Management Editor.
@@ -107,11 +107,11 @@ directly on the target machine (see [Configuration by Registry](/configuration/b
    <summary>⚡ Faster: apply via PowerShell (run as Administrator)</summary>
 
    Use this script on any target machine to create the force-install registry entry and refresh
-   policies in one step. Replace `<CHROME_EXTENSION_ID>` with the real store ID before running.
+   policies in one step. Replace `apbgiakfdalcpmnopopopookdceecnfj` with the real store ID before running.
 
    ```powershell
    # Run as Administrator
-   $ExtensionID  = "<CHROME_EXTENSION_ID>"
+   $ExtensionID  = "apbgiakfdalcpmnopopopookdceecnfj"
    $UpdateURL    = "https://clients2.google.com/service/update2/crx"
    $RegPath      = "HKLM:\SOFTWARE\Policies\Google\Chrome\ExtensionInstallForcelist"
 
@@ -140,7 +140,7 @@ directly on the target machine (see [Configuration by Registry](/configuration/b
    Open `chrome://policy` in the address bar and click **Reload policies**. Confirm:
 
    - **ExtensionInstallForcelist** appears under **Chrome Policies** and contains your extension
-     entry (`<CHROME_EXTENSION_ID>;https://clients2.google.com/service/update2/crx`).
+     entry (`apbgiakfdalcpmnopopopookdceecnfj;https://clients2.google.com/service/update2/crx`).
    - The **Status** column shows **OK** (not "Error" or "Ignored").
 
    Open `chrome://extensions` and confirm the extension is listed as **"Installed by enterprise

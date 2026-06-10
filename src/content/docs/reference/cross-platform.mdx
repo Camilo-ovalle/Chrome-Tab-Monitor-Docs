@@ -38,7 +38,7 @@ extensions.
 sudo mkdir -p /etc/opt/chrome/policies/managed
 sudo tee /etc/opt/chrome/policies/managed/tab-monitor.json > /dev/null << 'EOF'
 {
-  "<CHROME_EXTENSION_ID>": {
+  "apbgiakfdalcpmnopopopookdceecnfj": {
     "enabled": true,
     "tabLimit": 6,
     "windowLimit": 2,
@@ -50,7 +50,7 @@ EOF
 ```
 
 The JSON uses the Extension ID as the top-level key, with the five managed parameters nested
-inside. Replace `<CHROME_EXTENSION_ID>` with the real store ID and adjust the parameter values
+inside. Replace `apbgiakfdalcpmnopopopookdceecnfj` with the real store ID and adjust the parameter values
 to match your organization's requirements.
 
 After creating the file, restart Chrome and open `chrome://policy` → click **Reload policies**.
@@ -70,7 +70,7 @@ Edge on Linux reads managed policy from a separate directory:
 sudo mkdir -p /etc/opt/edge/policies/managed
 sudo tee /etc/opt/edge/policies/managed/tab-monitor.json > /dev/null << 'EOF'
 {
-  "<EDGE_EXTENSION_ID>": {
+  "aidfbccdmjdoloknpoiacciagffokjcb": {
     "enabled": true,
     "tabLimit": 6,
     "windowLimit": 2,
@@ -110,7 +110,7 @@ Create a configuration profile with the following `plist` payload and deploy it 
   <dict>
     <key>extensions</key>
     <dict>
-      <key><CHROME_EXTENSION_ID></key>
+      <key>apbgiakfdalcpmnopopopookdceecnfj</key>
       <dict>
         <key>policy</key>
         <dict>
@@ -132,14 +132,14 @@ Create a configuration profile with the following `plist` payload and deploy it 
 </plist>
 ```
 
-Replace `<CHROME_EXTENSION_ID>` with the real ID and adjust the integer values as needed. Deploy
+Replace `apbgiakfdalcpmnopopopookdceecnfj` with the real ID and adjust the integer values as needed. Deploy
 the profile to target Macs via your MDM solution and verify at `chrome://policy` after the next
 MDM check-in.
 
 ### Microsoft Edge
 
 For Edge on macOS, use the preference domain `com.microsoft.Edge`. The plist structure is
-identical to Chrome — replace `<CHROME_EXTENSION_ID>` with `<EDGE_EXTENSION_ID>` throughout.
+identical to Chrome — replace `apbgiakfdalcpmnopopopookdceecnfj` with `aidfbccdmjdoloknpoiacciagffokjcb` throughout.
 
 Deploy the profile via your MDM and verify at `edge://policy`.
 

@@ -56,7 +56,7 @@ Set the policy to **Enabled** and enter the JSON value for your browser:
 
     ```json title="ExtensionSettings value — Chrome"
     {
-      "<CHROME_EXTENSION_ID>": {
+      "apbgiakfdalcpmnopopopookdceecnfj": {
         "installation_mode": "force_installed",
         "update_url": "https://clients2.google.com/service/update2/crx"
       }
@@ -67,8 +67,8 @@ Set the policy to **Enabled** and enter the JSON value for your browser:
     <summary>⚡ Apply via PowerShell (run as Administrator)</summary>
 
     ```powershell
-    # Run as Administrator. Replace <CHROME_EXTENSION_ID> before running.
-    $ChromeID = "<CHROME_EXTENSION_ID>"
+    # Run as Administrator. Replace apbgiakfdalcpmnopopopookdceecnfj before running.
+    $ChromeID = "apbgiakfdalcpmnopopopookdceecnfj"
 
     $Settings = "{`"$ChromeID`":{`"installation_mode`":`"force_installed`",`"update_url`":`"https://clients2.google.com/service/update2/crx`"}}"
 
@@ -87,7 +87,7 @@ Set the policy to **Enabled** and enter the JSON value for your browser:
 
     ```json title="ExtensionSettings value — Edge"
     {
-      "<EDGE_EXTENSION_ID>": {
+      "aidfbccdmjdoloknpoiacciagffokjcb": {
         "installation_mode": "force_installed",
         "update_url": "https://edge.microsoft.com/extensionwebstorebase/v1/crx"
       }
@@ -98,8 +98,8 @@ Set the policy to **Enabled** and enter the JSON value for your browser:
     <summary>⚡ Apply via PowerShell (run as Administrator)</summary>
 
     ```powershell
-    # Run as Administrator. Replace <EDGE_EXTENSION_ID> before running.
-    $EdgeID = "<EDGE_EXTENSION_ID>"
+    # Run as Administrator. Replace aidfbccdmjdoloknpoiacciagffokjcb before running.
+    $EdgeID = "aidfbccdmjdoloknpoiacciagffokjcb"
 
     $Settings = "{`"$EdgeID`":{`"installation_mode`":`"force_installed`",`"update_url`":`"https://edge.microsoft.com/extensionwebstorebase/v1/crx`"}}"
 
@@ -157,14 +157,14 @@ The registry path and value types are:
   <TabItem label="Google Chrome">
 
     ```
-    HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome\3rdparty\extensions\<CHROME_EXTENSION_ID>\policy
+    HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome\3rdparty\extensions\apbgiakfdalcpmnopopopookdceecnfj\policy
     ```
 
   </TabItem>
   <TabItem label="Microsoft Edge">
 
     ```
-    HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge\3rdparty\extensions\<EDGE_EXTENSION_ID>\policy
+    HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge\3rdparty\extensions\aidfbccdmjdoloknpoiacciagffokjcb\policy
     ```
 
   </TabItem>

@@ -139,7 +139,7 @@ explicit allowlist entry in addition to the force-install policy. Add the Extens
 **Cause 3 — Extension ID differs between stores**
 
 If the extension was published to the Edge Add-ons store, it has a different ID than the Chrome
-Web Store ID. Use `<EDGE_EXTENSION_ID>` (from the Edge Add-ons Partner Center) with the Edge
+Web Store ID. Use `aidfbccdmjdoloknpoiacciagffokjcb` (from the Edge Add-ons Partner Center) with the Edge
 update URL. Using the Chrome ID with the Edge update URL returns a 404 and the installation fails.
 
 **Cause 4 — Edge policy templates (ADMX) not imported**
@@ -172,7 +172,7 @@ but does not close anything automatically.
 
     ```powershell
     # Run as Administrator — verify Chrome policy values
-    Get-ItemProperty "HKLM:\SOFTWARE\Policies\Google\Chrome\3rdparty\extensions\<CHROME_EXTENSION_ID>\policy" |
+    Get-ItemProperty "HKLM:\SOFTWARE\Policies\Google\Chrome\3rdparty\extensions\apbgiakfdalcpmnopopopookdceecnfj\policy" |
         Select-Object enabled, tabLimit, windowLimit, autoClose, autoCloseWindows |
         Format-List
     ```
@@ -182,7 +182,7 @@ but does not close anything automatically.
 
     ```powershell
     # Run as Administrator — verify Edge policy values
-    Get-ItemProperty "HKLM:\SOFTWARE\Policies\Microsoft\Edge\3rdparty\extensions\<EDGE_EXTENSION_ID>\policy" |
+    Get-ItemProperty "HKLM:\SOFTWARE\Policies\Microsoft\Edge\3rdparty\extensions\aidfbccdmjdoloknpoiacciagffokjcb\policy" |
         Select-Object enabled, tabLimit, windowLimit, autoClose, autoCloseWindows |
         Format-List
     ```

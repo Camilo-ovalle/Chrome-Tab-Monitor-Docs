@@ -6,7 +6,7 @@ description: Complete cheat sheet of all Windows Registry paths and values for C
 import { Tabs, TabItem } from '@astrojs/starlight/components';
 
 All paths below use `HKEY_LOCAL_MACHINE` (HKLM) and apply machine-wide. Replace
-`<CHROME_EXTENSION_ID>` and `<EDGE_EXTENSION_ID>` with the real store IDs before deploying.
+`apbgiakfdalcpmnopopopookdceecnfj` and `aidfbccdmjdoloknpoiacciagffokjcb` with the real store IDs before deploying.
 
 ---
 
@@ -22,7 +22,7 @@ All paths below use `HKEY_LOCAL_MACHINE` (HKLM) and apply machine-wide. Replace
 
     | Value name | Type | Data |
     |------------|------|------|
-    | `1` | `REG_SZ` | `<CHROME_EXTENSION_ID>;https://clients2.google.com/service/update2/crx` |
+    | `1` | `REG_SZ` | `apbgiakfdalcpmnopopopookdceecnfj;https://clients2.google.com/service/update2/crx` |
 
     **Alternative — ExtensionSettings (unified install + update URL):**
     ```
@@ -42,7 +42,7 @@ All paths below use `HKEY_LOCAL_MACHINE` (HKLM) and apply machine-wide. Replace
 
     | Value name | Type | Data |
     |------------|------|------|
-    | `1` | `REG_SZ` | `<EDGE_EXTENSION_ID>;https://edge.microsoft.com/extensionwebstorebase/v1/crx` |
+    | `1` | `REG_SZ` | `aidfbccdmjdoloknpoiacciagffokjcb;https://edge.microsoft.com/extensionwebstorebase/v1/crx` |
 
     **Alternative — ExtensionSettings (unified install + update URL):**
     ```
@@ -64,7 +64,7 @@ All paths below use `HKEY_LOCAL_MACHINE` (HKLM) and apply machine-wide. Replace
 
     **Base path (create all parameter values inside this key):**
     ```
-    HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome\3rdparty\extensions\<CHROME_EXTENSION_ID>\policy
+    HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome\3rdparty\extensions\apbgiakfdalcpmnopopopookdceecnfj\policy
     ```
 
     | Value name | Type | Default (hex) | Decimal |
@@ -80,7 +80,7 @@ All paths below use `HKEY_LOCAL_MACHINE` (HKLM) and apply machine-wide. Replace
 
     **Base path (create all parameter values inside this key):**
     ```
-    HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge\3rdparty\extensions\<EDGE_EXTENSION_ID>\policy
+    HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge\3rdparty\extensions\aidfbccdmjdoloknpoiacciagffokjcb\policy
     ```
 
     | Value name | Type | Default (hex) | Decimal |
@@ -129,8 +129,8 @@ gpresult /scope computer /v
 # Check if force-install entry exists (Chrome)
 Get-ItemProperty "HKLM:\SOFTWARE\Policies\Google\Chrome\ExtensionInstallForcelist" -ErrorAction SilentlyContinue
 
-# Check managed parameters (Chrome) — replace <CHROME_EXTENSION_ID>
-Get-ItemProperty "HKLM:\SOFTWARE\Policies\Google\Chrome\3rdparty\extensions\<CHROME_EXTENSION_ID>\policy" -ErrorAction SilentlyContinue |
+# Check managed parameters (Chrome) — replace apbgiakfdalcpmnopopopookdceecnfj
+Get-ItemProperty "HKLM:\SOFTWARE\Policies\Google\Chrome\3rdparty\extensions\apbgiakfdalcpmnopopopookdceecnfj\policy" -ErrorAction SilentlyContinue |
     Select-Object enabled, tabLimit, windowLimit, autoClose, autoCloseWindows | Format-List
 ```
 

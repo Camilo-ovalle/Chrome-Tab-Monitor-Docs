@@ -17,9 +17,9 @@ Verify the following before starting:
 - The **ADMX Central Store** is configured at
   `\\<domain>\SYSVOL\<domain>\Policies\PolicyDefinitions\`.
 - You have the correct Extension ID for your deployment scenario:
-  - If published on **Edge Add-ons** store: `<EDGE_EXTENSION_ID>`
+  - If published on **Edge Add-ons** store: `aidfbccdmjdoloknpoiacciagffokjcb`
   - If only published on **Chrome Web Store** (deployed to Edge via Chrome update URL):
-    `<CHROME_EXTENSION_ID>`
+    `apbgiakfdalcpmnopopopookdceecnfj`
 
 <Aside type="caution">
 The Edge Add-ons store may assign a **different Extension ID** than the Chrome Web Store, even for
@@ -87,12 +87,12 @@ IDs and update URLs from different stores will cause the installation to fail si
 
       **If the extension is published in Edge Add-ons:**
       ```
-      <EDGE_EXTENSION_ID>;https://edge.microsoft.com/extensionwebstorebase/v1/crx
+      aidfbccdmjdoloknpoiacciagffokjcb;https://edge.microsoft.com/extensionwebstorebase/v1/crx
       ```
 
       **If deploying from Chrome Web Store to Edge:**
       ```
-      <CHROME_EXTENSION_ID>;https://clients2.google.com/service/update2/crx
+      apbgiakfdalcpmnopopopookdceecnfj;https://clients2.google.com/service/update2/crx
       ```
 
       When using the Chrome Web Store URL on Edge, you must also enable **"Allow specific
@@ -105,12 +105,12 @@ IDs and update URLs from different stores will cause the installation to fail si
    <details class="ps-block">
    <summary>⚡ Faster: apply via PowerShell (run as Administrator)</summary>
 
-   Replace `<EDGE_EXTENSION_ID>` with the real ID before running. For Chrome Web Store
+   Replace `aidfbccdmjdoloknpoiacciagffokjcb` with the real ID before running. For Chrome Web Store
    deployments on Edge, swap the ID and update URL accordingly.
 
    ```powershell
    # Run as Administrator
-   $ExtensionID  = "<EDGE_EXTENSION_ID>"
+   $ExtensionID  = "aidfbccdmjdoloknpoiacciagffokjcb"
    $UpdateURL    = "https://edge.microsoft.com/extensionwebstorebase/v1/crx"
    $RegPath      = "HKLM:\SOFTWARE\Policies\Microsoft\Edge\ExtensionInstallForcelist"
 

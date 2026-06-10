@@ -14,7 +14,7 @@ enrolled devices on the next check-in.
 
 - Admin access to **Google Admin Console** (`admin.google.com`) for Chrome deployments, **or**
 - Admin access to **Microsoft Intune** (`intune.microsoft.com`) for Edge deployments.
-- Extension IDs: `<CHROME_EXTENSION_ID>` for Chrome, `<EDGE_EXTENSION_ID>` for Edge.
+- Extension IDs: `apbgiakfdalcpmnopopopookdceecnfj` for Chrome, `aidfbccdmjdoloknpoiacciagffokjcb` for Edge.
 - Target devices must be **enrolled** in the respective management platform and show as active.
 
 <Aside type="tip">
@@ -46,7 +46,7 @@ infrastructure, ADMX imports, or manual registry edits on each machine.
 
        Click the **+** button (bottom-right corner) → **Add from Chrome Web Store**.
 
-       Search for **Chrome Tab Monitor** in the search box, or paste `<CHROME_EXTENSION_ID>`
+       Search for **Chrome Tab Monitor** in the search box, or paste `apbgiakfdalcpmnopopopookdceecnfj`
        directly in the search field to find it by ID.
 
        Once found, select the extension and click **Select**.
@@ -84,7 +84,7 @@ infrastructure, ADMX imports, or manual registry edits on each machine.
 
        To verify on a managed device:
        - Open `chrome://policy` and click **Reload policies**.
-       - Under **Extension policies**, find `<CHROME_EXTENSION_ID>` and confirm all five
+       - Under **Extension policies**, find `apbgiakfdalcpmnopopopookdceecnfj` and confirm all five
          parameters appear with **Status: OK**.
        - Open the extension popup — managed fields display a **GPO** badge and are grayed out.
 
@@ -126,13 +126,13 @@ infrastructure, ADMX imports, or manual registry edits on each machine.
        Add the following value in the entry field:
 
        ```
-       <EDGE_EXTENSION_ID>;https://edge.microsoft.com/extensionwebstorebase/v1/crx
+       aidfbccdmjdoloknpoiacciagffokjcb;https://edge.microsoft.com/extensionwebstorebase/v1/crx
        ```
 
        If the extension is only available on the Chrome Web Store (not Edge Add-ons), use:
 
        ```
-       <CHROME_EXTENSION_ID>;https://clients2.google.com/service/update2/crx
+       apbgiakfdalcpmnopopopookdceecnfj;https://clients2.google.com/service/update2/crx
        ```
 
        In that case, also add the setting **"Allow specific extensions to be installed"** and add
@@ -149,7 +149,7 @@ infrastructure, ADMX imports, or manual registry edits on each machine.
 
        ```json title="ExtensionSettings — Intune"
        {
-         "<EDGE_EXTENSION_ID>": {
+         "aidfbccdmjdoloknpoiacciagffokjcb": {
            "installation_mode": "force_installed",
            "update_url": "https://edge.microsoft.com/extensionwebstorebase/v1/crx",
            "runtime_blocked_hosts": [],

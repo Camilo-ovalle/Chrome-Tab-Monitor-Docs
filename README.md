@@ -82,13 +82,13 @@ Run from the project root:
 
 ## Placeholders
 
-The following values must be replaced before publishing:
+The published docs under `src/content/docs/**` use the real published Extension IDs:
 
-| Placeholder | Where |
-| :---------- | :---- |
-| `<CHROME_EXTENSION_ID>` | All pages referencing Chrome Web Store ID |
-| `<EDGE_EXTENSION_ID>` | All pages referencing Edge Add-ons store ID |
-| `site:` in `astro.config.mjs` | Replace `https://docs-placeholder.example.com` with the real domain |
+| Placeholder | Where | Status |
+| :---------- | :---- | :----- |
+| `<CHROME_EXTENSION_ID>` | All pages referencing Chrome Web Store ID | ✅ Replaced with `apbgiakfdalcpmnopopopookdceecnfj` |
+| `<EDGE_EXTENSION_ID>` | All pages referencing Edge Add-ons store ID | ✅ Replaced with `aidfbccdmjdoloknpoiacciagffokjcb` |
+| `site:` in `astro.config.mjs` | Real domain | ✅ Set to `https://camilo-ovalle.github.io` |
 
 ## Phase 2 — Spanish translation (pending)
 

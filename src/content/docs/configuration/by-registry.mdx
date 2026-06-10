@@ -14,7 +14,7 @@ without ADMX templates.
 
 - **Local administrator** rights on the target machine, or a GPO with Group Policy Preferences
   configured in GPMC (see [Section 4](#4-deploy-via-group-policy-preferences-no-admx-required)).
-- Extension IDs ready: `<CHROME_EXTENSION_ID>` for Chrome, `<EDGE_EXTENSION_ID>` for Edge.
+- Extension IDs ready: `apbgiakfdalcpmnopopopookdceecnfj` for Chrome, `aidfbccdmjdoloknpoiacciagffokjcb` for Edge.
 
 ---
 
@@ -33,7 +33,7 @@ next startup, and to prevent users from removing it.
 
     | Value name | Type | Data |
     |------------|------|------|
-    | `1` | `REG_SZ` | `<CHROME_EXTENSION_ID>;https://clients2.google.com/service/update2/crx` |
+    | `1` | `REG_SZ` | `apbgiakfdalcpmnopopopookdceecnfj;https://clients2.google.com/service/update2/crx` |
 
     The value name `1` is an index — if you have multiple force-installed extensions, use `2`,
     `3`, etc. for additional entries. Each browser startup checks all indexed values.
@@ -48,7 +48,7 @@ next startup, and to prevent users from removing it.
 
     | Value name | Type | Data |
     |------------|------|------|
-    | `1` | `REG_SZ` | `<EDGE_EXTENSION_ID>;https://edge.microsoft.com/extensionwebstorebase/v1/crx` |
+    | `1` | `REG_SZ` | `aidfbccdmjdoloknpoiacciagffokjcb;https://edge.microsoft.com/extensionwebstorebase/v1/crx` |
 
     Same indexing rule applies: use `1`, `2`, `3` for multiple extensions.
 
@@ -67,7 +67,7 @@ path under the correct browser root, then add one `REG_DWORD` value per paramete
 
     **Base path — create all parameter values here:**
     ```
-    HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome\3rdparty\extensions\<CHROME_EXTENSION_ID>\policy
+    HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome\3rdparty\extensions\apbgiakfdalcpmnopopopookdceecnfj\policy
     ```
 
   </TabItem>
@@ -75,7 +75,7 @@ path under the correct browser root, then add one `REG_DWORD` value per paramete
 
     **Base path — create all parameter values here:**
     ```
-    HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge\3rdparty\extensions\<EDGE_EXTENSION_ID>\policy
+    HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge\3rdparty\extensions\aidfbccdmjdoloknpoiacciagffokjcb\policy
     ```
 
   </TabItem>
@@ -119,10 +119,10 @@ Windows Registry Editor Version 5.00
 
 ; ── Force-install Chrome Tab Monitor ──────────────────────────────
 [HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome\ExtensionInstallForcelist]
-"1"="<CHROME_EXTENSION_ID>;https://clients2.google.com/service/update2/crx"
+"1"="apbgiakfdalcpmnopopopookdceecnfj;https://clients2.google.com/service/update2/crx"
 
 ; ── Managed parameters (edit values to match your policy) ─────────
-[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome\3rdparty\extensions\<CHROME_EXTENSION_ID>\policy]
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome\3rdparty\extensions\apbgiakfdalcpmnopopopookdceecnfj\policy]
 "enabled"=dword:00000001
 "tabLimit"=dword:00000006
 "windowLimit"=dword:00000002
@@ -134,8 +134,8 @@ Windows Registry Editor Version 5.00
     <summary>⚡ Apply both via PowerShell (run as Administrator)</summary>
 
     ```powershell
-    # Run as Administrator. Replace <CHROME_EXTENSION_ID> with the real store ID.
-    $ID         = "<CHROME_EXTENSION_ID>"
+    # Run as Administrator. Replace apbgiakfdalcpmnopopopookdceecnfj with the real store ID.
+    $ID         = "apbgiakfdalcpmnopopopookdceecnfj"
     $UpdateURL  = "https://clients2.google.com/service/update2/crx"
 
     # 1. Force-install entry
@@ -171,10 +171,10 @@ Windows Registry Editor Version 5.00
 
 ; ── Force-install Chrome Tab Monitor on Edge ──────────────────────
 [HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge\ExtensionInstallForcelist]
-"1"="<EDGE_EXTENSION_ID>;https://edge.microsoft.com/extensionwebstorebase/v1/crx"
+"1"="aidfbccdmjdoloknpoiacciagffokjcb;https://edge.microsoft.com/extensionwebstorebase/v1/crx"
 
 ; ── Managed parameters (edit values to match your policy) ─────────
-[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge\3rdparty\extensions\<EDGE_EXTENSION_ID>\policy]
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge\3rdparty\extensions\aidfbccdmjdoloknpoiacciagffokjcb\policy]
 "enabled"=dword:00000001
 "tabLimit"=dword:00000006
 "windowLimit"=dword:00000002
@@ -186,8 +186,8 @@ Windows Registry Editor Version 5.00
     <summary>⚡ Apply both via PowerShell (run as Administrator)</summary>
 
     ```powershell
-    # Run as Administrator. Replace <EDGE_EXTENSION_ID> with the real store ID.
-    $ID         = "<EDGE_EXTENSION_ID>"
+    # Run as Administrator. Replace aidfbccdmjdoloknpoiacciagffokjcb with the real store ID.
+    $ID         = "aidfbccdmjdoloknpoiacciagffokjcb"
     $UpdateURL  = "https://edge.microsoft.com/extensionwebstorebase/v1/crx"
 
     # 1. Force-install entry
@@ -239,10 +239,10 @@ when you want to target specific OUs without a new ADMX deployment.
    | **Key path** | `SOFTWARE\Policies\Google\Chrome\ExtensionInstallForcelist` |
    | **Value name** | `1` |
    | **Value type** | `REG_SZ` |
-   | **Value data** | `<CHROME_EXTENSION_ID>;https://clients2.google.com/service/update2/crx` |
+   | **Value data** | `apbgiakfdalcpmnopopopookdceecnfj;https://clients2.google.com/service/update2/crx` |
 
 5. Click **OK**, then repeat **steps 3–4** for each managed parameter value, using:
-   - **Key path:** `SOFTWARE\Policies\Google\Chrome\3rdparty\extensions\<CHROME_EXTENSION_ID>\policy`
+   - **Key path:** `SOFTWARE\Policies\Google\Chrome\3rdparty\extensions\apbgiakfdalcpmnopopopookdceecnfj\policy`
    - **Value type:** `REG_DWORD`
    - One item per parameter (`enabled`, `tabLimit`, `windowLimit`, `autoClose`, `autoCloseWindows`)
 
